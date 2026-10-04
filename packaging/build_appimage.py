@@ -116,6 +116,7 @@ def main():
     (appdir / '.DirIcon').symlink_to('goottikalenteri.svg')
     docs = appdir / 'usr' / 'share' / 'doc' / 'goottikalenteri'
     docs.mkdir(parents=True)
+    shutil.copytree(ROOT / 'packaging' / 'licenses', docs / 'licenses' / 'bundled-runtime')
     for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md'):
         shutil.copyfile(ROOT / name, docs / name)
     for distribution in ('PyQt6', 'PyQt6-Qt6', 'PyQt6-sip', 'PyInstaller'):

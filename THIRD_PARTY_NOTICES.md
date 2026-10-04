@@ -19,7 +19,7 @@ Main components:
 | PyQt6-sip | 13.13.0 | BSD-2-Clause | https://pypi.org/project/PyQt6-sip/13.13.0/#files |
 | CPython | 3.12.14 | PSF license | https://www.python.org/downloads/release/python-31214/ |
 | PyInstaller bootloader | 6.22.3 | GPLv2-or-later with bootloader exception | https://github.com/pyinstaller/pyinstaller/tree/v6.22.3 |
-| AppImage runtime | SHA-256 156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074 | See upstream runtime licenses | https://github.com/AppImage/type2-runtime |
+| AppImage runtime | SHA-256 156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074 | MIT | https://github.com/AppImage/type2-runtime |
 
 PyInstaller also collects supporting system shared libraries. Their package names,
 versions and source-package names are recorded in `system-libraries.json`; installed
