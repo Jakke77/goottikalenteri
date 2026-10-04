@@ -56,7 +56,7 @@ class DesktopWidget(QWidget):
             self.move(position)
 
     def update_clock(self):
-        now = datetime.now()
+        now = self.owner.time_service.now() if hasattr(self.owner, "time_service") else datetime.now()
         clock = now.strftime('%H:%M:%S' if self.options['seconds'] else '%H:%M')
         try:
             fictional = from_gregorian(now.date())
@@ -130,6 +130,8 @@ class DesktopWidget(QWidget):
         # Keep the menu dark; the widget itself has no visible controls or frame.
         menu = QMenu(self.owner)
         menu.addAction('Widgetin asetukset…', self.owner.open_settings)
+        status = menu.addAction(self.owner.time_service.status)
+        status.setEnabled(False)
         menu.addAction('Avaa kalenteri', self.open_calendar)
         menu.addAction('Piilota widget', lambda: self.owner.set_widget_enabled(False))
         menu.addSeparator()

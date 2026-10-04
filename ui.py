@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
 )
 from calendar_model import (CalendarDate, MONTH_NAMES, moon_label,
                             from_gregorian, weekday, WEEKDAY_NAMES)
-from datetime import date as GregorianDate
+from time_service import TimeService
 from PyQt6.QtCore import QTimer, QSettings
 from widget import DesktopWidget, SettingsDialog, load_options
 
@@ -83,15 +83,16 @@ class NoteDialog(QDialog):
             self.persist('')
 
 class CalendarWindow(QMainWindow):
-    def __init__(self, store):
+    def __init__(self, store, restore_widget=True):
         super().__init__()
         self.store = store
         self.settings = QSettings()
-        self.widget_enabled = self.settings.value('widget/enabled', False, type=bool)
+        self.time_service = TimeService(self.settings, self)
+        self.widget_enabled = (self.settings.value('widget/enabled', False, type=bool) if restore_widget else False)
         self.desktop_widget = None
         self.widget_only = False
         try:
-            self.date = from_gregorian(GregorianDate.today())
+            self.date = from_gregorian(self.time_service.now().date())
         except ValueError:
             self.date = CalendarDate()
         self.setWindowTitle('Goottikalenteri')
@@ -169,11 +170,12 @@ class CalendarWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh)
         self.timer.start(60000)
-        self.set_widget_enabled(self.widget_enabled)
+        self.set_widget_enabled(self.widget_enabled, persist=False)
 
-    def set_widget_enabled(self, enabled):
+    def set_widget_enabled(self, enabled, persist=True):
         self.widget_enabled = enabled
-        self.settings.setValue('widget/enabled', enabled)
+        if persist:
+            self.settings.setValue('widget/enabled', enabled)
         if enabled:
             if self.desktop_widget is None:
                 self.desktop_widget = DesktopWidget(self, self.settings)
@@ -207,7 +209,7 @@ class CalendarWindow(QMainWindow):
 
     def go_today(self):
         try:
-            self.date = from_gregorian(GregorianDate.today())
+            self.date = from_gregorian(self.time_service.now().date())
         except ValueError:
             return
         self.refresh()
@@ -274,7 +276,7 @@ class CalendarWindow(QMainWindow):
         self.prev_month.setEnabled(self.date.year > 1 or self.date.month > 0)
         count = 0
         try:
-            current = from_gregorian(GregorianDate.today())
+            current = from_gregorian(self.time_service.now().date())
         except ValueError:
             current = None
         start = weekday(CalendarDate(self.date.year, self.date.month, 0))

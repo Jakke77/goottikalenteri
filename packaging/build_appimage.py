@@ -41,9 +41,9 @@ def fetch(url, destination, checksum):
 def source_zip(destination):
     files = ['.gitignore', 'LICENSE', 'README.md', 'THIRD_PARTY_NOTICES.md',
              'requirements.txt', 'requirements-build.txt', 'calendar_model.py',
-             'main.py', 'storage.py', 'ui.py', 'widget.py', 'self_test.py',
+             'main.py', 'instance.py', 'time_service.py', 'storage.py', 'ui.py', 'widget.py', 'self_test.py',
              'goottikalenteri.desktop', 'goottikalenteri-widget.desktop']
-    files += [str(path.relative_to(ROOT)) for directory in ('tests', 'packaging', 'previews')
+    files += [str(path.relative_to(ROOT)) for directory in ('tests', 'packaging', 'previews', '.github')
               for path in (ROOT / directory).rglob('*')
               if path.is_file() and '__pycache__' not in path.parts]
     with zipfile.ZipFile(destination, 'w', zipfile.ZIP_DEFLATED) as archive:
@@ -85,7 +85,8 @@ def system_notices(bundle, docs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default='0.1.0')
+    parser.add_argument('--version', default='0.2.0')
+    parser.add_argument('--variant', choices=('calendar', 'widget', 'both'), default='both')
     parser.add_argument('--skip-freeze', action='store_true', help='Reuse an existing frozen bundle')
     parser.add_argument('--frozen-dir', type=Path)
     parser.add_argument('--tool-file', type=Path)
@@ -110,7 +111,7 @@ def main():
         shutil.rmtree(appdir)
     appdir.mkdir()
     shutil.copytree(bundle, appdir / 'usr' / 'bin', symlinks=True)
-    (appdir / 'AppRun').symlink_to('usr/bin/goottikalenteri')
+
     for name in ('goottikalenteri.desktop', 'goottikalenteri.svg'):
         shutil.copyfile(ROOT / 'packaging' / name, appdir / name)
     (appdir / '.DirIcon').symlink_to('goottikalenteri.svg')
@@ -146,18 +147,39 @@ def main():
     extracted = work / 'tool'
     extracted.mkdir(exist_ok=True)
     run([tool.resolve(), '--appimage-extract'], cwd=extracted)
-    image = output / f'Goottikalenteri-{args.version}-x86_64.AppImage'
-    env = dict(os.environ, ARCH='x86_64', VERSION=args.version)
-    run([extracted / 'squashfs-root' / 'AppRun', '--runtime-file', runtime.resolve(),
-         '--no-appstream', '--mksquashfs-opt', '-processors', '--mksquashfs-opt', '2',
-         appdir, image], env=env)
-    image.chmod(0o755)
-    run([image, '--appimage-extract-and-run', '--self-test'],
-        env=dict(os.environ, QT_QPA_PLATFORM='offscreen'))
-    assets = [image, sources, info_path]
+    images = []
+    variants = ('calendar', 'widget') if args.variant == 'both' else (args.variant,)
+    for variant in variants:
+        launcher = appdir / 'AppRun'
+        launcher.write_text('#!/bin/sh\n'
+                            f'export GOOTTI_LAUNCH_MODE={variant}\n'
+                            'app_dir=${APPDIR:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}\n'
+                            'exec "$app_dir/usr/bin/goottikalenteri" "$@"\n')
+        launcher.chmod(0o755)
+        desktop = (ROOT / 'packaging' / 'goottikalenteri.desktop').read_text()
+        if variant == 'widget':
+            desktop = desktop.replace('Name=Goottikalenteri', 'Name=Goottikalenteri-widget')
+            desktop = desktop.replace('Exec=goottikalenteri', 'Exec=goottikalenteri --widget-only')
+        (appdir / 'goottikalenteri.desktop').write_text(desktop)
+        name = 'Goottikalenteri' if variant == 'calendar' else 'Goottikalenteri-widget'
+        image = output / f'{name}-{args.version}-x86_64.AppImage'
+        env = dict(os.environ, ARCH='x86_64', VERSION=args.version)
+        run([extracted / 'squashfs-root' / 'AppRun', '--runtime-file', runtime.resolve(),
+             '--no-appstream', '--mksquashfs-opt', '-processors', '--mksquashfs-opt', '2',
+             appdir, image], env=env)
+        image.chmod(0o755)
+        checked = subprocess.run([str(image), '--appimage-extract-and-run', '--self-test'],
+                                 env=dict(os.environ, QT_QPA_PLATFORM='offscreen'),
+                                 capture_output=True, text=True, check=True)
+        print(checked.stdout, end='')
+        print(checked.stderr, end='', file=sys.stderr)
+        if f'Launcher mode: {variant}' not in checked.stdout:
+            raise RuntimeError(f'Wrong launch mode in {image.name}')
+        images.append(image)
+    assets = images + [sources, info_path]
     (output / 'SHA256SUMS').write_text(''.join(
         f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n' for path in assets))
-    print(f'AppImage built and tested: {image}')
+    print('AppImages built and tested: ' + ', '.join(map(str, images)))
 
 if __name__ == '__main__':
     main()

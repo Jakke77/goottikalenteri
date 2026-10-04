@@ -143,45 +143,66 @@ year overview and desktop widget display only fictional dates and years.
 
 MIT License. Copyright (c) 2026 Jakke77. See [LICENSE](LICENSE).
 
-## AppImage download and build
+## Two AppImage launchers
 
-The private GitHub release provides an x86_64 AppImage with Python and PyQt6 bundled.
-Download it from https://github.com/Jakke77/goottikalenteri/releases (requires repository access),
-then run:
-
-```bash
-chmod +x Goottikalenteri-0.1.0-x86_64.AppImage
-./Goottikalenteri-0.1.0-x86_64.AppImage
-./Goottikalenteri-0.1.0-x86_64.AppImage --widget-only
-```
-
-If FUSE mounting is unavailable, the AppImage runtime supports extraction and execution:
+The private GitHub release provides two independent x86_64 downloads, with Python
+and PyQt6 included. Choose the calendar or the transparent desktop clock:
 
 ```bash
-./Goottikalenteri-0.1.0-x86_64.AppImage --appimage-extract-and-run --widget-only
+chmod +x Goottikalenteri-0.2.0-x86_64.AppImage Goottikalenteri-widget-0.2.0-x86_64.AppImage
+./Goottikalenteri-0.2.0-x86_64.AppImage
+./Goottikalenteri-widget-0.2.0-x86_64.AppImage
 ```
 
-The app requires a Linux desktop, x86_64 and glibc at least 2.43 in this build.
-It is intended for Ubuntu 26.04 and 26.10; other/older Linux distributions are not
-claimed compatible. Only offscreen smoke tests were performed, not clean GNOME
-installations. User notes/settings remain outside the read-only AppImage.
+The calendar package opens only the calendar by default. The widget package opens
+only the clock; no command-line switch is needed. Both are self-contained, so you
+can download just the one you want. The widget's context menu can still open the
+full calendar. Either package also accepts `--calendar` or `--widget-only` to override
+its default. Neither enables automatic login startup.
 
-To build from source on x86_64 Ubuntu 26.04 (recommended baseline):
+If one package is already running, the other launcher tells that process to display
+the calendar or widget. Both views can remain open together while one process owns
+the event file. A repeated launch does not create duplicate clocks. Closing the
+calendar after launching the widget leaves the clock running; use its right-click
+“Lopeta” command to exit everything. Notes and font settings are shared.
+
+Download from https://github.com/Jakke77/goottikalenteri/releases (requires access).
+If FUSE mounting is unavailable, add `--appimage-extract-and-run` before the app
+arguments. Notes and settings remain outside the read-only AppImage.
+
+Target: x86_64 Linux desktops, including Ubuntu 26.04 and 26.10. The release's
+`build-info.json` records the required glibc symbol version. Offscreen tests verify
+both launch modes, calendar logic, IPC, font settings and background transparency;
+actual clean GNOME/Wayland installations remain untested.
+
+Build both packages on Linux x86_64:
 
 ```bash
 sudo apt install python3-venv binutils squashfs-tools
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-build.txt
-.venv/bin/python packaging/build_appimage.py --version 0.1.0
+.venv/bin/python packaging/build_appimage.py --version 0.2.0 --variant both
 ```
 
-The script uses a PyInstaller onedir bundle inside the AppImage, an original SVG
-icon, pinned SHA-256 checks for the official packaging tool and runtime, source
-archive and license notices. It smoke-tests the resulting AppImage and writes
-`release-assets/SHA256SUMS` plus `build-info.json`. Build outputs are excluded from Git.
-The continuous upstream tooling downloads are pinned to this release's checksums;
-if upstream replaces them, review new tooling before updating those pins.
+Use `--variant calendar` or `--variant widget` to build just one. The script puts a
+PyInstaller onedir bundle inside each AppImage, includes original source/license
+notices, checks pinned official tooling hashes, and tests the launcher's default mode.
+Outputs, source ZIP, `build-info.json` and `SHA256SUMS` go into `release-assets/`,
+which is excluded from Git. Each archive includes build instructions and the
+GitHub Actions release workflow. Actions builds both images on Ubuntu 24.04 when
+a release is published, tests them and uploads the assets to that private release.
+The workflow can also be run manually for an existing release tag.
 
-Run the isolated packaged smoke test with `--self-test` (uses temporary data).
-The original code is MIT; bundled dependencies retain their own licenses, including
-PyQt6 GPLv3. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The original code is MIT. Bundled dependencies retain their own licenses, including
+PyQt6 GPLv3; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### Ajan tarkistus
+
+Sovellus tarkistaa ajan julkiselta `time.mikes.fi`-NTP-palvelimelta jokaisen
+goottikuun päivänä 7 klo 07.07.07 tietokoneen paikallista aikaa. Suljettuna
+väliin jäänyt tarkistus tehdään seuraavalla käynnistyksellä. Verkkovirheen
+jälkeen uusi yritys tehdään tunnin kuluttua. Widgetin oikean painikkeen valikko
+näyttää tarkistuksen tilan. UDP-portin 123 on oltava käytettävissä.
+Korjaus vaikuttaa vain sovelluksen kelloon ja tämän päivän päivämäärään;
+järjestelmäkelloa ei muuteta eikä ylläpitäjän oikeuksia tarvita. NTP-korjaus
+on istuntokohtainen; tietokoneen oma ajan synkronointi kannattaa pitää päällä.
