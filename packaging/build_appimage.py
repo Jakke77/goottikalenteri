@@ -43,9 +43,9 @@ def source_zip(destination):
              'requirements.txt', 'requirements-build.txt', 'calendar_model.py',
              'main.py', 'instance.py', 'time_service.py', 'storage.py', 'ui.py', 'widget.py', 'self_test.py',
              'goottikalenteri.desktop', 'goottikalenteri-widget.desktop']
-    files += [str(path.relative_to(ROOT)) for directory in ('tests', 'packaging', 'previews', '.github')
+    files += [str(path.relative_to(ROOT)) for directory in ('tests', 'packaging', 'previews', '.github', 'android')
               for path in (ROOT / directory).rglob('*')
-              if path.is_file() and '__pycache__' not in path.parts]
+              if path.is_file() and not any(part in path.parts for part in ('__pycache__', '.gradle', 'build'))]
     with zipfile.ZipFile(destination, 'w', zipfile.ZIP_DEFLATED) as archive:
         for name in sorted(files):
             archive.write(ROOT / name, Path('goottikalenteri') / name)
@@ -85,7 +85,7 @@ def system_notices(bundle, docs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default='0.3.0')
+    parser.add_argument('--version', default='0.4.0')
     parser.add_argument('--variant', choices=('calendar', 'widget', 'both'), default='both')
     parser.add_argument('--skip-freeze', action='store_true', help='Reuse an existing frozen bundle')
     parser.add_argument('--frozen-dir', type=Path)

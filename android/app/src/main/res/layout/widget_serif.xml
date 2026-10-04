@@ -1,0 +1,11 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+android:orientation="vertical" android:padding="8dp" android:gravity="center_vertical"
+android:background="@android:color/transparent">
+<TextClock android:id="@+id/clock" android:layout_width="match_parent" android:layout_height="wrap_content"
+ android:fontFamily="serif" android:format12Hour="HH:mm:ss" android:format24Hour="HH:mm:ss" android:textSize="40sp" android:textColor="#25c5ff" android:textStyle="bold" android:maxLines="1"/>
+<TextView android:id="@+id/gothic_date" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="serif" android:text="Hornasunnuntai · Päivä 6
+0. Varjojenkuu" android:textColor="#25c5ff" android:textSize="16sp"/>
+<TextView android:id="@+id/gothic_year" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="serif" android:text="Varjoaika · Vuosi 0001" android:textColor="#25c5ff" android:textSize="13sp"/>
+<TextView android:id="@+id/official" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="serif" android:text="4. lokakuuta 2026" android:textColor="#25c5ff" android:textSize="11sp"/>
+</LinearLayout>

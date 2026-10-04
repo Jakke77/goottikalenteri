@@ -13,3 +13,9 @@ dist/
 *.AppDir/
 *.AppImage
 release-assets/
+
+.gradle/
+local.properties
+*.apk
+*.jks
+*.keystore

@@ -1,4 +1,4 @@
-name: Build calendar and widget AppImages
+name: Build Varjoaika Linux and Android packages
 
 on:
   release:
@@ -8,7 +8,7 @@ on:
       tag:
         description: Existing release tag to build
         required: true
-        default: v0.3.0
+        default: v0.4.0
 
 permissions:
   contents: write
@@ -47,3 +47,33 @@ jobs:
           cd release-assets
           sha256sum -c SHA256SUMS
           gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber *.AppImage *-source.zip build-info.json SHA256SUMS
+
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out the release source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - name: Set up checked Gradle and Android tools
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          curl --fail --location --retry 3 https://services.gradle.org/distributions/gradle-8.13-bin.zip -o /tmp/varjo-gradle.zip
+          echo '20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78  /tmp/varjo-gradle.zip' | sha256sum -c -
+          unzip -q /tmp/varjo-gradle.zip -d /tmp/varjo-gradle
+          echo '/tmp/varjo-gradle/gradle-8.13/bin' >> "$GITHUB_PATH"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Test, lint and build the Android widget
+        working-directory: android
+        run: gradle --no-daemon testDebugUnitTest lintDebug assembleDebug
+      - name: Upload Android test APK and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          mkdir -p android-assets
+          cp android/app/build/outputs/apk/debug/app-debug.apk "android-assets/Varjoaika-${RELEASE_TAG#v}-android-test.apk"
+          cd android-assets
+          sha256sum *.apk > Varjoaika-Android-SHA256SUMS
+          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber *.apk Varjoaika-Android-SHA256SUMS

@@ -154,9 +154,9 @@ The private GitHub release provides two independent x86_64 downloads, with Pytho
 and PyQt6 included. Choose the calendar or the transparent desktop clock:
 
 ```bash
-chmod +x Varjoaika-0.3.0-x86_64.AppImage Varjoaika-widget-0.3.0-x86_64.AppImage
-./Varjoaika-0.3.0-x86_64.AppImage
-./Varjoaika-widget-0.3.0-x86_64.AppImage
+chmod +x Varjoaika-0.4.0-x86_64.AppImage Varjoaika-widget-0.4.0-x86_64.AppImage
+./Varjoaika-0.4.0-x86_64.AppImage
+./Varjoaika-widget-0.4.0-x86_64.AppImage
 ```
 
 The calendar package opens only the calendar by default. The widget package opens
@@ -186,7 +186,7 @@ Build both packages on Linux x86_64:
 sudo apt install python3-venv binutils squashfs-tools
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-build.txt
-.venv/bin/python packaging/build_appimage.py --version 0.3.0 --variant both
+.venv/bin/python packaging/build_appimage.py --version 0.4.0 --variant both
 ```
 
 Use `--variant calendar` or `--variant widget` to build just one. The script puts a
@@ -219,3 +219,11 @@ Kryptaperjantai, Noitalauantai ja Hornasunnuntai vastaavat tavallista
 maanantaista sunnuntaihin jatkuvaa seitsemän päivän viikkoa. Kalenterin
 sarakkeet käyttävät lyhyitä nimiä; widget ja päivän muistiinpanoikkuna
 näyttävät koko nimen.
+
+## Android home-screen widget
+
+See [android/README.md](android/README.md). Android 6.0+ (API 23) is the minimum
+for the native Android widget. The initial APK is debug-signed and labelled a test
+build; unit tests, lint and compilation run in GitHub Actions. Physical Android
+phones/launchers and every OS version have not been tested. Android uses system
+time and may delay date updates in Doze. Linux remains the full calendar edition.
