@@ -23,7 +23,7 @@ def query_ntp(host=SERVER):
     packet = bytearray(48)
     packet[0] = 0x23  # NTP v4 client
     started = time.time()
-    stamp = int((started + NTP_EPOCH) * 2**32)
+    stamp = int((started + NTP_EPOCH) * 2**32) % 2**64
     packet[40:48] = struct.pack('!Q', stamp)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
         connection.settimeout(5)
@@ -35,9 +35,14 @@ def query_ntp(host=SERVER):
         response[0] & 7 != 4 or not 1 <= response[1] <= 15 or
         response[24:32] != packet[40:48]):
         raise ValueError('Invalid or unsynchronised NTP response')
-    received, sent = (struct.unpack('!Q', response[index:index+8])[0] / 2**32 - NTP_EPOCH
-                      for index in (32, 40))
-    if not received or not sent or ended - started > 6:
+    raw = [struct.unpack('!Q', response[index:index+8])[0] for index in (32, 40)]
+    if not all(raw):
+        raise ValueError('Missing NTP timestamps')
+    stamps = [value / 2**32 - NTP_EPOCH for value in raw]
+    # Resolve NTP's 2036 rollover using the closest era to the local clock.
+    received, sent = [value + round((started - value) / 2**32) * 2**32
+                      for value in stamps]
+    if ended - started > 6:
         raise ValueError('Invalid NTP timestamps')
     return ((received - started) + (sent - ended)) / 2
 

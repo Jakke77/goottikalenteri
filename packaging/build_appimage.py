@@ -19,8 +19,8 @@ import urllib.request
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-TOOL_URL = 'https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage'
-TOOL_SHA = 'a6d71e2b6cd66f8e8d16c37ad164658985e0cf5fcaa950c90a482890cb9d13e0'
+TOOL_URL = 'https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage'
+TOOL_SHA = 'ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0'
 RUNTIME_URL = 'https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64'
 RUNTIME_SHA = '156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074'
 
@@ -85,7 +85,7 @@ def system_notices(bundle, docs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default='0.2.0')
+    parser.add_argument('--version', default='0.2.1')
     parser.add_argument('--variant', choices=('calendar', 'widget', 'both'), default='both')
     parser.add_argument('--skip-freeze', action='store_true', help='Reuse an existing frozen bundle')
     parser.add_argument('--frozen-dir', type=Path)
