@@ -85,7 +85,7 @@ def system_notices(bundle, docs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default='0.2.3')
+    parser.add_argument('--version', default='0.3.0')
     parser.add_argument('--variant', choices=('calendar', 'widget', 'both'), default='both')
     parser.add_argument('--skip-freeze', action='store_true', help='Reuse an existing frozen bundle')
     parser.add_argument('--frozen-dir', type=Path)
@@ -137,7 +137,7 @@ def main():
     info_path = output / 'build-info.json'
     info_path.write_text(json.dumps(info, indent=2) + '\n')
     shutil.copyfile(info_path, docs / 'build-info.json')
-    sources = output / f'Goottikalenteri-{args.version}-source.zip'
+    sources = output / f'Varjoaika-{args.version}-source.zip'
     source_zip(sources)
     shutil.copyfile(sources, docs / sources.name)
     tool = args.tool_file or work / 'appimagetool.AppImage'
@@ -158,10 +158,10 @@ def main():
         launcher.chmod(0o755)
         desktop = (ROOT / 'packaging' / 'goottikalenteri.desktop').read_text()
         if variant == 'widget':
-            desktop = desktop.replace('Name=Goottikalenteri', 'Name=Goottikalenteri-widget')
+            desktop = desktop.replace('Name=Varjoaika', 'Name=Varjoaika-widget')
             desktop = desktop.replace('Exec=goottikalenteri', 'Exec=goottikalenteri --widget-only')
         (appdir / 'goottikalenteri.desktop').write_text(desktop)
-        name = 'Goottikalenteri' if variant == 'calendar' else 'Goottikalenteri-widget'
+        name = 'Varjoaika' if variant == 'calendar' else 'Varjoaika-widget'
         image = output / f'{name}-{args.version}-x86_64.AppImage'
         env = dict(os.environ, ARCH='x86_64', VERSION=args.version)
         run([extracted / 'squashfs-root' / 'AppRun', '--runtime-file', runtime.resolve(),

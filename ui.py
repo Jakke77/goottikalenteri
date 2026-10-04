@@ -95,7 +95,7 @@ class CalendarWindow(QMainWindow):
             self.date = from_gregorian(self.time_service.now().date())
         except ValueError:
             self.date = CalendarDate()
-        self.setWindowTitle('Goottikalenteri')
+        self.setWindowTitle('Varjoaika')
         self.resize(1080, 760)
         self.setMinimumSize(680, 540)
         root = QWidget()
@@ -103,7 +103,7 @@ class CalendarWindow(QMainWindow):
         layout = QVBoxLayout(root)
         layout.setContentsMargins(28, 24, 28, 20)
         layout.setSpacing(16)
-        eyebrow = QLabel('GOOTTIKALENTERI   /   KUUN VARJOJEN KIERTO')
+        eyebrow = QLabel('VARJOAIKA   /   KUUN VARJOJEN KIERTO')
         eyebrow.setObjectName('muted')
         layout.addWidget(eyebrow)
         self.title = QLabel()

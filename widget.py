@@ -25,7 +25,7 @@ class DesktopWidget(QWidget):
     def __init__(self, owner, settings):
         super().__init__(None, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         self.owner, self.settings = owner, settings
-        self.setWindowTitle('Goottikalenteri-widget')
+        self.setWindowTitle('Varjoaika-widget')
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
         self.setAutoFillBackground(False)
@@ -66,7 +66,7 @@ class DesktopWidget(QWidget):
             fictional = from_gregorian(now.date())
             date_text = (f'{WEEKDAY_NAMES[weekday(fictional)]} · Päivä {fictional.day}\n'
                          f'{fictional.month}. {MONTH_NAMES[fictional.month]}')
-            year_text = f'Vuosi {fictional.year:04d}'
+            year_text = f'Varjoaika · Vuosi {fictional.year:04d}'
         except ValueError:
             date_text, year_text = 'Ennen ajanlaskun alkua', ''
         official_text = (f'{now.day}. {FINNISH_MONTHS[now.month - 1]} {now.year}')

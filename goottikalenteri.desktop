@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Goottikalenteri
+Name=Varjoaika
 Comment=Fictional lunar calendar with local notes
 Exec=/usr/bin/python3 /path/to/goottikalenteri/main.py
 Icon=weather-clear-night

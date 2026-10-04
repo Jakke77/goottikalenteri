@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Goottikalenteri-kello
+Name=Varjoaika-kello
 Comment=Transparent gothic calendar desktop clock
 Exec=/usr/bin/python3 /path/to/goottikalenteri/main.py --widget-only
 Icon=preferences-system-time

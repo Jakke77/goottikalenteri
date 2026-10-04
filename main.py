@@ -13,7 +13,7 @@ from instance import server_name, request_mode, start_server
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Goottikalenteri: fictional 13 × 30 calendar')
+    parser = argparse.ArgumentParser(description='Varjoaika: fictional 13 × 30 calendar')
     parser.add_argument('--data-file', type=Path, help='Override the local events.json path')
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument('--widget-only', dest='launch_mode', action='store_const',
@@ -27,7 +27,9 @@ def main():
     if args.self_test:
         os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
     app = QApplication([sys.argv[0]])
+    # Keep storage/settings identity stable across the visible rebranding.
     app.setApplicationName('Goottikalenteri')
+    app.setApplicationDisplayName('Varjoaika')
     app.setOrganizationName('Goottikalenteri')
     app.setDesktopFileName('goottikalenteri')
     app.setStyle('Fusion')

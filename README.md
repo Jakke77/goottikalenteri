@@ -1,4 +1,8 @@
-# Goottikalenteri
+# Varjoaika
+
+The fictional calendar system and application are named **Varjoaika** (Shadow Time).
+Formerly Goottikalenteri. The existing GitHub repository and internal data/settings
+identifiers are retained so notes and appearance settings survive the rename.
 
 Modular Python / PyQt6 desktop application intended for Ubuntu 26.04 and 26.10
 with GNOME. Finnish interface, dark charcoal backgrounds and neon blue highlights.
@@ -150,9 +154,9 @@ The private GitHub release provides two independent x86_64 downloads, with Pytho
 and PyQt6 included. Choose the calendar or the transparent desktop clock:
 
 ```bash
-chmod +x Goottikalenteri-0.2.3-x86_64.AppImage Goottikalenteri-widget-0.2.3-x86_64.AppImage
-./Goottikalenteri-0.2.3-x86_64.AppImage
-./Goottikalenteri-widget-0.2.3-x86_64.AppImage
+chmod +x Varjoaika-0.3.0-x86_64.AppImage Varjoaika-widget-0.3.0-x86_64.AppImage
+./Varjoaika-0.3.0-x86_64.AppImage
+./Varjoaika-widget-0.3.0-x86_64.AppImage
 ```
 
 The calendar package opens only the calendar by default. The widget package opens
@@ -182,7 +186,7 @@ Build both packages on Linux x86_64:
 sudo apt install python3-venv binutils squashfs-tools
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-build.txt
-.venv/bin/python packaging/build_appimage.py --version 0.2.3 --variant both
+.venv/bin/python packaging/build_appimage.py --version 0.3.0 --variant both
 ```
 
 Use `--variant calendar` or `--variant widget` to build just one. The script puts a
