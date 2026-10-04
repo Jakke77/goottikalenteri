@@ -105,7 +105,8 @@ python3 main.py --widget-only
 
 The desktop widget contains only neon text: local time, weekday/day, month name,
 and fictional year. There is no painted background, border, title bar, month grid
-or visible button. Gregorian dates never appear in it. The background is fully
+or visible button. A smaller bottom line also shows the official Finnish date, e.g.
+`1. heinäkuuta 2026`. Its font size is adjustable in settings. The background is fully
 transparent; text opacity is configurable separately.
 
 Drag the text to reposition it. Right-click or double-click the text to open its
@@ -149,9 +150,9 @@ The private GitHub release provides two independent x86_64 downloads, with Pytho
 and PyQt6 included. Choose the calendar or the transparent desktop clock:
 
 ```bash
-chmod +x Goottikalenteri-0.2.1-x86_64.AppImage Goottikalenteri-widget-0.2.1-x86_64.AppImage
-./Goottikalenteri-0.2.1-x86_64.AppImage
-./Goottikalenteri-widget-0.2.1-x86_64.AppImage
+chmod +x Goottikalenteri-0.2.2-x86_64.AppImage Goottikalenteri-widget-0.2.2-x86_64.AppImage
+./Goottikalenteri-0.2.2-x86_64.AppImage
+./Goottikalenteri-widget-0.2.2-x86_64.AppImage
 ```
 
 The calendar package opens only the calendar by default. The widget package opens
@@ -181,7 +182,7 @@ Build both packages on Linux x86_64:
 sudo apt install python3-venv binutils squashfs-tools
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-build.txt
-.venv/bin/python packaging/build_appimage.py --version 0.2.1 --variant both
+.venv/bin/python packaging/build_appimage.py --version 0.2.2 --variant both
 ```
 
 Use `--variant calendar` or `--variant widget` to build just one. The script puts a

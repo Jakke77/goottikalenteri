@@ -7,8 +7,12 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QDialog, QCheckBox,
     QComboBox, QPushButton, QColorDialog, QMenu, QLabel)
 from calendar_model import from_gregorian, MONTH_NAMES, weekday, WEEKDAY_NAMES
 
+FINNISH_MONTHS = ('tammikuuta', 'helmikuuta', 'maaliskuuta', 'huhtikuuta',
+                  'toukokuuta', 'kesäkuuta', 'heinäkuuta', 'elokuuta',
+                  'syyskuuta', 'lokakuuta', 'marraskuuta', 'joulukuuta')
+
 DEFAULTS = {
-    'font': 'DejaVu Sans', 'clock_size': 40, 'date_size': 15, 'year_size': 13,
+    'font': 'DejaVu Sans', 'clock_size': 40, 'date_size': 15, 'year_size': 13, 'official_size': 11,
     'opacity': 100, 'color': '#25c5ff', 'seconds': True, 'locked': False,
     'on_top': False, 'alignment': 'left',
 }
@@ -65,9 +69,10 @@ class DesktopWidget(QWidget):
             year_text = f'Vuosi {fictional.year:04d}'
         except ValueError:
             date_text, year_text = 'Ennen ajanlaskun alkua', ''
+        official_text = (f'{now.day}. {FINNISH_MONTHS[now.month - 1]} {now.year}')
         self.lines = []
         for text, key in ((clock, 'clock_size'), (date_text, 'date_size'),
-                          (year_text, 'year_size')):
+                          (year_text, 'year_size'), (official_text, 'official_size')):
             font = QFont(self.options['font'], self.options[key])
             if key == 'clock_size':
                 font.setBold(True)
@@ -77,7 +82,7 @@ class DesktopWidget(QWidget):
                      for text, font in self.lines), default=100) + 32
         height = sum(QFontMetrics(font).height() + 5 for _, font in self.lines) + 24
         self.setFixedSize(width, height)
-        self.setAccessibleName(clock + ' · ' + date_text.replace('\n', ' · ') + ' · ' + year_text)
+        self.setAccessibleName(clock + ' · ' + date_text.replace('\n', ' · ') + ' · ' + year_text + ' · ' + official_text)
         self.update()
 
     def paintEvent(self, event):
@@ -176,6 +181,7 @@ class SettingsDialog(QDialog):
             ('clock_size', 'Kellon tekstikoko', 8, 160, ' pt'),
             ('date_size', 'Päivämäärän tekstikoko', 8, 100, ' pt'),
             ('year_size', 'Vuosiluvun tekstikoko', 8, 100, ' pt'),
+            ('official_size', 'Virallisen päivämäärän tekstikoko', 8, 100, ' pt'),
             ('opacity', 'Tekstin peittävyys', 15, 100, ' %')):
             control = QSpinBox()
             control.setRange(minimum, maximum)
