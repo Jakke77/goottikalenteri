@@ -16,6 +16,9 @@ public class VarjoWidget extends AppWidgetProvider {
     private static final String REFRESH = "fi.varjoaika.widget.REFRESH";
     static SharedPreferences prefs(Context c) { return c.getSharedPreferences("appearance", Context.MODE_PRIVATE); }
     public static void updateAll(Context c) {
+        renderAll(c); WeatherJob.schedule(c, false);
+    }
+    public static void renderAll(Context c) {
         AppWidgetManager m = AppWidgetManager.getInstance(c);
         int[] ids = m.getAppWidgetIds(new ComponentName(c, VarjoWidget.class));
         for (int id : ids) update(c, m, id);
@@ -38,13 +41,15 @@ public class VarjoWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.gothic_date, date == null ? "Ennen Varjoajan alkua" : date.dateLabel());
         v.setTextViewText(R.id.gothic_year, date == null ? "Varjoaika" : date.yearLabel());
         v.setTextViewText(R.id.official, VarjoDate.official(now));
+        v.setTextViewText(R.id.weather, WeatherJob.text(p));
+        v.setViewVisibility(R.id.weather,p.getBoolean("weather_enabled",false)?android.view.View.VISIBLE:android.view.View.GONE);
         String format = p.getBoolean("seconds", true) ? "HH:mm:ss" : "HH:mm";
         v.setCharSequence(R.id.clock, "setFormat12Hour", format);
         v.setCharSequence(R.id.clock, "setFormat24Hour", format);
         int color = ((255 * p.getInt("opacity", 100) / 100) << 24) | 0x25c5ff;
-        int[] views = {R.id.clock, R.id.gothic_date, R.id.gothic_year, R.id.official};
-        String[] keys = {"clock_size", "date_size", "year_size", "official_size"};
-        int[] sizes = {40, 16, 13, 11};
+        int[] views = {R.id.clock, R.id.gothic_date, R.id.gothic_year, R.id.official, R.id.weather};
+        String[] keys = {"clock_size", "date_size", "year_size", "official_size", "weather_size"};
+        int[] sizes = {40, 16, 13, 11, 11};
         for (int i = 0; i < views.length; i++) {
             v.setTextColor(views[i], color);
             v.setTextViewTextSize(views[i], TypedValue.COMPLEX_UNIT_SP, p.getInt(keys[i], sizes[i]));
@@ -53,7 +58,7 @@ public class VarjoWidget extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.widget_root, settings);
         m.updateAppWidget(id, v);
     }
-    @Override public void onUpdate(Context c, AppWidgetManager m, int[] ids) { updateAll(c); }
+    @Override public void onUpdate(Context c, AppWidgetManager m, int[] ids) { updateAll(c); if(System.currentTimeMillis()-prefs(c).getLong("weather_saved",0)>=3600000) WeatherJob.schedule(c,true); }
     @Override public void onAppWidgetOptionsChanged(Context c, AppWidgetManager m, int id, Bundle options) { updateAll(c); }
     @Override public void onDeleted(Context c, int[] ids) { updateAll(c); }
     @Override public void onDisabled(Context c) { updateAll(c); }

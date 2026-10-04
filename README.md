@@ -227,3 +227,25 @@ for the native Android widget. The initial APK is debug-signed and labelled a te
 build; unit tests, lint and compilation run in GitHub Actions. Physical Android
 phones/launchers and every OS version have not been tested. Android uses system
 time and may delay date updates in Doze. Linux remains the full calendar edition.
+
+### Sää widgetissä (0.5.0)
+
+Avaa widgetin asetukset ja valitse **Näytä wttr.in-sää (3 päivää)**.
+Automaattinen sijainti perustuu sääpalvelun havaitsemaan julkiseen IP-osoitteeseen;
+se voi näyttää VPN:n tai operaattorin sijainnin. Poista automaattinen sijainti
+ja kirjoita kaupungin tai kylän nimi (tarvittaessa myös maa), jos haluat tarkemman paikkakunnan.
+Paikkakunta lähetetään HTTPS-yhteydellä [wttr.in-palveluun](https://github.com/chubin/wttr.in).
+Sään käyttö on oletuksena pois päältä.
+
+Kolmella rivillä näkyvät virallinen päivämäärä, alin/ylin lämpötila, keskipäivän
+sääkuvaus ja suurin päivän sateen todennäköisyys. Ennuste alkaa tästä päivästä.
+Säätekstin koko on säädettävissä erikseen. Haku tehdään taustalla tunnin välein,
+ja viimeisin ennuste säilyy paikallisesti yhteyskatkon aikana. Vanhentuneesta
+ennusteesta ilmoitetaan; menneitä ennustepäiviä ei näytetä. Linux-widgetin
+hiiren oikean painikkeen valikossa on **Päivitä sää nyt**.
+
+Androidissa sää käyttää samaa palvelua ja asetuksia. JobScheduler hakee sään
+verkkoyhteyden ollessa käytettävissä; virransäästö voi viivästyttää päivitystä.
+Kasvata kotinäytön widgetin korkeutta, jotta kaikki ennusterivit mahtuvat.
+APK on edelleen testiversio ja edellisen testiversion allekirjoitus voi poiketa:
+asennus voi edellyttää vanhan APK:n poistamista.

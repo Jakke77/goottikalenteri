@@ -41,7 +41,7 @@ def fetch(url, destination, checksum):
 def source_zip(destination):
     files = ['.gitignore', 'LICENSE', 'README.md', 'THIRD_PARTY_NOTICES.md',
              'requirements.txt', 'requirements-build.txt', 'calendar_model.py',
-             'main.py', 'instance.py', 'time_service.py', 'storage.py', 'ui.py', 'widget.py', 'self_test.py',
+             'main.py', 'instance.py', 'time_service.py', 'storage.py', 'ui.py', 'widget.py', 'weather.py', 'self_test.py',
              'goottikalenteri.desktop', 'goottikalenteri-widget.desktop']
     files += [str(path.relative_to(ROOT)) for directory in ('tests', 'packaging', 'previews', '.github', 'android')
               for path in (ROOT / directory).rglob('*')
@@ -85,7 +85,7 @@ def system_notices(bundle, docs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default='0.4.0')
+    parser.add_argument('--version', default='0.5.0')
     parser.add_argument('--variant', choices=('calendar', 'widget', 'both'), default='both')
     parser.add_argument('--skip-freeze', action='store_true', help='Reuse an existing frozen bundle')
     parser.add_argument('--frozen-dir', type=Path)

@@ -4,7 +4,8 @@ from PyQt6.QtCore import Qt, QTimer, QPoint
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter
 from PyQt6.QtWidgets import (QApplication, QWidget, QDialog, QCheckBox,
     QDialogButtonBox, QVBoxLayout, QFormLayout, QFontComboBox, QSpinBox,
-    QComboBox, QPushButton, QColorDialog, QMenu, QLabel)
+    QComboBox, QPushButton, QColorDialog, QMenu, QLabel, QLineEdit)
+from weather import WeatherService
 from calendar_model import from_gregorian, MONTH_NAMES, weekday, WEEKDAY_NAMES
 
 FINNISH_MONTHS = ('tammikuuta', 'helmikuuta', 'maaliskuuta', 'huhtikuuta',
@@ -15,6 +16,7 @@ DEFAULTS = {
     'font': 'DejaVu Sans', 'clock_size': 40, 'date_size': 15, 'year_size': 13, 'official_size': 11,
     'opacity': 100, 'color': '#25c5ff', 'seconds': True, 'locked': False,
     'on_top': False, 'alignment': 'left',
+    'weather_enabled': False, 'weather_auto': True, 'weather_city': '', 'weather_size': 11,
 }
 
 def load_options(settings):
@@ -33,6 +35,8 @@ class DesktopWidget(QWidget):
         self.setStyleSheet('background: transparent; border: none;')
         self.lines = []
         self.origin = None
+        self.weather = WeatherService(settings, self)
+        self.weather.changed.connect(self.update_clock)
         self.apply_options(load_options(settings))
         geometry = settings.value('widget/geometry')
         if geometry is not None:
@@ -49,6 +53,7 @@ class DesktopWidget(QWidget):
 
     def apply_options(self, options):
         self.options = dict(options)
+        self.weather.configure(self.options)
         visible = self.isVisible()
         position = self.pos()
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, self.options['on_top'])
@@ -70,9 +75,13 @@ class DesktopWidget(QWidget):
         except ValueError:
             date_text, year_text = 'Ennen ajanlaskun alkua', ''
         official_text = (f'{now.day}. {FINNISH_MONTHS[now.month - 1]} {now.year}')
+        weather_text = '\n'.join(self.weather.lines) if self.options['weather_enabled'] else ''
+        if self.options['weather_enabled'] and not self.options['weather_auto'] and not self.options['weather_city'].strip():
+            weather_text = 'Anna sään paikkakunta asetuksissa.'
         self.lines = []
         for text, key in ((clock, 'clock_size'), (date_text, 'date_size'),
-                          (year_text, 'year_size'), (official_text, 'official_size')):
+                          (year_text, 'year_size'), (official_text, 'official_size'),
+                          (weather_text, 'weather_size')):
             font = QFont(self.options['font'], self.options[key])
             if key == 'clock_size':
                 font.setBold(True)
@@ -137,6 +146,7 @@ class DesktopWidget(QWidget):
         menu.addAction('Widgetin asetukset…', self.owner.open_settings)
         status = menu.addAction(self.owner.time_service.status)
         status.setEnabled(False)
+        menu.addAction('Päivitä sää nyt', lambda: self.weather.refresh(force=True))
         menu.addAction('Avaa kalenteri', self.open_calendar)
         menu.addAction('Piilota widget', lambda: self.owner.set_widget_enabled(False))
         menu.addSeparator()
@@ -182,6 +192,7 @@ class SettingsDialog(QDialog):
             ('date_size', 'Päivämäärän tekstikoko', 8, 100, ' pt'),
             ('year_size', 'Vuosiluvun tekstikoko', 8, 100, ' pt'),
             ('official_size', 'Virallisen päivämäärän tekstikoko', 8, 100, ' pt'),
+            ('weather_size', 'Sääennusteen tekstikoko', 8, 40, ' pt'),
             ('opacity', 'Tekstin peittävyys', 15, 100, ' %')):
             control = QSpinBox()
             control.setRange(minimum, maximum)
@@ -199,7 +210,13 @@ class SettingsDialog(QDialog):
         self.color_button.clicked.connect(self.pick_color)
         form.addRow('Tekstin väri', self.color_button)
         layout.addLayout(form)
-        for key, title in [('seconds', 'Näytä sekunnit'), ('locked', 'Lukitse sijainti'),
+        self.city = QLineEdit(self.original['weather_city'])
+        self.city.setPlaceholderText('Esim. Helsinki, Finland tai kylän nimi')
+        form.addRow('Sään paikkakunta', self.city)
+        self.city.textChanged.connect(self.preview)
+        for key, title in [('weather_enabled', 'Näytä wttr.in-sää (3 päivää)'),
+                           ('weather_auto', 'Hae sijainti automaattisesti IP-osoitteesta'),
+                           ('seconds', 'Näytä sekunnit'), ('locked', 'Lukitse sijainti'),
                            ('on_top', 'Pidä muiden ikkunoiden päällä')]:
             control = QCheckBox(title)
             control.setChecked(self.original[key])
@@ -210,6 +227,8 @@ class SettingsDialog(QDialog):
         layout.addWidget(reset)
         info = QLabel('Vedä kellon tekstistä siirtääksesi sitä.\n'
                       'Hiiren oikea painike tai kaksoisnapsautus avaa asetukset.\n'
+                      'Automaattinen sääsijainti on IP-osoitteesta arvioitu, ei GPS.\n'
+                      'Sää haetaan tunnin välein verkosta palvelusta wttr.in.\n'
                       'Muutokset näkyvät heti; Peruuta palauttaa aiemman ulkoasun.')
         info.setWordWrap(True)
         layout.addWidget(info)
@@ -229,7 +248,7 @@ class SettingsDialog(QDialog):
 
     def options(self):
         result = {'font': self.font_picker.currentFont().family(), 'color': self.color,
-                  'alignment': self.alignment.currentData()}
+                  'alignment': self.alignment.currentData(), 'weather_city': self.city.text()}
         for key, control in self.controls.items():
             result[key] = control.value() if isinstance(control, QSpinBox) else control.isChecked()
         return result
@@ -245,6 +264,7 @@ class SettingsDialog(QDialog):
             self.preview()
 
     def reset_defaults(self):
+        self.city.setText(DEFAULTS['weather_city'])
         self.font_picker.setCurrentFont(QFont(DEFAULTS['font']))
         for key, control in self.controls.items():
             if isinstance(control, QSpinBox):

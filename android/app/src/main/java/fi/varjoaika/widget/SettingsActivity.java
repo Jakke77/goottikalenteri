@@ -38,19 +38,24 @@ public class SettingsActivity extends Activity {
         slider("date_size","Goottipäivämäärän koko (sp)",16,10,32);
         slider("year_size","Vuosiluvun koko (sp)",13,10,28);
         slider("official_size","Virallisen päivämäärän koko (sp)",11,9,24);
+        slider("weather_size","Säätekstin koko (sp)",11,9,24);
         slider("opacity","Tekstin peittävyys (%)",100,30,100);
         label("Fontti"); Spinner font=new Spinner(this);
         font.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Sans","Serif","Monospace"}));
         font.setSelection(prefs.getInt("font",0)); content.addView(font);
         CheckBox seconds=new CheckBox(this); seconds.setText("Näytä sekunnit"); seconds.setChecked(prefs.getBoolean("seconds",true)); content.addView(seconds);
+        CheckBox weather=new CheckBox(this);weather.setText("Näytä wttr.in-sää (3 päivää)");weather.setChecked(prefs.getBoolean("weather_enabled",false));content.addView(weather);
+        CheckBox auto=new CheckBox(this);auto.setText("Automaattinen sijainti IP-osoitteesta");auto.setChecked(prefs.getBoolean("weather_auto",true));content.addView(auto);
+        EditText city=new EditText(this);city.setSingleLine(true);city.setHint("Kaupunki tai kylä, esim. Helsinki, Finland");city.setText(prefs.getString("weather_city",""));content.addView(city);
+        label("IP-sijainti on arvio, ei GPS. Sää haetaan wttr.in-palvelusta tunnin välein; Androidin virransäästö voi viivästyttää hakua. Ennuste säilyy yhteyskatkon aikana.");
         Button save=new Button(this); save.setText("Tallenna"); content.addView(save);
         save.setOnClickListener(v->{ SharedPreferences.Editor edit=prefs.edit();
             for (Map.Entry<String,SeekBar> entry:sliders.entrySet()) edit.putInt(entry.getKey(),entry.getValue().getProgress()+(Integer)entry.getValue().getTag());
-            edit.putInt("font",font.getSelectedItemPosition()).putBoolean("seconds",seconds.isChecked()).apply();
-            VarjoWidget.updateAll(this); Toast.makeText(this,"Widget päivitetty",Toast.LENGTH_SHORT).show(); finish();
+            edit.putInt("font",font.getSelectedItemPosition()).putBoolean("seconds",seconds.isChecked()).putBoolean("weather_enabled",weather.isChecked()).putBoolean("weather_auto",auto.isChecked()).putString("weather_city",city.getText().toString().trim()).apply();
+            VarjoWidget.updateAll(this); WeatherJob.schedule(this,true); Toast.makeText(this,"Widget päivitetty",Toast.LENGTH_SHORT).show(); finish();
         });
-        Button refresh=new Button(this); refresh.setText("Päivitä päivämäärä nyt"); content.addView(refresh);
-        refresh.setOnClickListener(v->{VarjoWidget.updateAll(this);Toast.makeText(this,"Päivämäärä päivitetty",Toast.LENGTH_SHORT).show();});
+        Button refresh=new Button(this); refresh.setText("Päivitä päivämäärä ja sää nyt"); content.addView(refresh);
+        refresh.setOnClickListener(v->{VarjoWidget.updateAll(this);WeatherJob.schedule(this,true);Toast.makeText(this,"Päivämäärä päivitetty",Toast.LENGTH_SHORT).show();});
         label("Kello käyttää puhelimen järjestelmäaikaa. Pidä Androidin automaattinen aika päällä. Päivämäärän päivitys voi viivästyä virransäästössä; yllä oleva painike päivittää sen heti. Asetukset koskevat kaikkia Varjoaika-widgetejä.");
     }
 }

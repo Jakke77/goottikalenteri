@@ -30,3 +30,5 @@ Build using JDK 17, Android SDK 36, build-tools 35.0.0 and Gradle 8.13:
 `gradle --no-daemon testDebugUnitTest lintDebug assembleDebug`
 Open this folder in Android Studio or run the GitHub Actions release workflow.
 Original code MIT; Android platform and build-tool dependencies retain their licenses.
+
+Sää: wttr.in, kolme päivää. Asetuksissa voi ottaa sään käyttöön, valita IP-sijainnin tai paikkakunnan ja säätekstin koon. Sää haetaan HTTPS-yhteydellä tunnin välein Androidin verkkotöinä. Internet- ja verkkotilan oikeudet ovat tätä varten; GPS-oikeuksia ei pyydetä.
