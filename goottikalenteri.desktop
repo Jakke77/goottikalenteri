@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Goottikalenteri
+Comment=Fictional lunar calendar with local notes
+Exec=/usr/bin/python3 /path/to/goottikalenteri/main.py
+Icon=weather-clear-night
+Terminal=false
+Categories=Office;Calendar;
+StartupNotify=true

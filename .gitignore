@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+events.json
+events.json.lock
+.events-*.tmp
+.pytest_cache/
+
+build/
+dist/
+*.spec
+*.AppDir/
+*.AppImage
+release-assets/

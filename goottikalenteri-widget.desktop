@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Goottikalenteri-kello
+Comment=Transparent gothic calendar desktop clock
+Exec=/usr/bin/python3 /path/to/goottikalenteri/main.py --widget-only
+Icon=preferences-system-time
+Terminal=false
+Categories=Utility;Clock;
+StartupNotify=false

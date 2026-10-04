@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Goottikalenteri
+Comment=Gothic lunar calendar and transparent desktop clock
+Exec=goottikalenteri
+Icon=goottikalenteri
+Terminal=false
+Categories=Office;Calendar;
+StartupNotify=true
