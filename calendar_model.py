@@ -72,7 +72,11 @@ def moon_label(day):
 # User-defined parallel timeline: 2026-10-04 = 0001-00-06.
 from datetime import date as GregorianDate, timedelta
 EPOCH = GregorianDate(2026, 9, 28)
-WEEKDAY_NAMES = ('Ma', 'Ti', 'Ke', 'To', 'Pe', 'La', 'Su')
+WEEKDAY_NAMES = ('Varjomaanantai', 'Kallotiistai', 'Ruumiskeskiviikko',
+                 'Kalmistotorstai', 'Kryptaperjantai', 'Noitalauantai',
+                 'Hornasunnuntai')
+WEEKDAY_SHORT_NAMES = ('Varjo-ma', 'Kallo-ti', 'Ruumis-ke', 'Kalmisto-to',
+                       'Krypta-pe', 'Noita-la', 'Horna-su')
 
 def to_gregorian(date):
     offset = (date.year - 1) * 390 + date.month * 30 + date.day

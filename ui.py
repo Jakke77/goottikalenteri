@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QMessageBox, QPushButton, QScrollArea, QTextEdit, QVBoxLayout, QWidget,
 )
 from calendar_model import (CalendarDate, MONTH_NAMES, moon_label,
-                            from_gregorian, weekday, WEEKDAY_NAMES)
+                            from_gregorian, weekday, WEEKDAY_NAMES, WEEKDAY_SHORT_NAMES)
 from time_service import TimeService
 from PyQt6.QtCore import QTimer, QSettings
 from widget import DesktopWidget, SettingsDialog, load_options
@@ -138,8 +138,10 @@ class CalendarWindow(QMainWindow):
         panel = QWidget()
         self.grid = grid = QGridLayout(panel)
         grid.setSpacing(10)
-        for column, name in enumerate(WEEKDAY_NAMES):
+        for column, name in enumerate(WEEKDAY_SHORT_NAMES):
             label = QLabel(name)
+            label.setToolTip(WEEKDAY_NAMES[column])
+            label.setAccessibleName(WEEKDAY_NAMES[column])
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             grid.addWidget(label, 0, column)
         self.days = []

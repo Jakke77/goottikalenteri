@@ -150,9 +150,9 @@ The private GitHub release provides two independent x86_64 downloads, with Pytho
 and PyQt6 included. Choose the calendar or the transparent desktop clock:
 
 ```bash
-chmod +x Goottikalenteri-0.2.2-x86_64.AppImage Goottikalenteri-widget-0.2.2-x86_64.AppImage
-./Goottikalenteri-0.2.2-x86_64.AppImage
-./Goottikalenteri-widget-0.2.2-x86_64.AppImage
+chmod +x Goottikalenteri-0.2.3-x86_64.AppImage Goottikalenteri-widget-0.2.3-x86_64.AppImage
+./Goottikalenteri-0.2.3-x86_64.AppImage
+./Goottikalenteri-widget-0.2.3-x86_64.AppImage
 ```
 
 The calendar package opens only the calendar by default. The widget package opens
@@ -182,7 +182,7 @@ Build both packages on Linux x86_64:
 sudo apt install python3-venv binutils squashfs-tools
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-build.txt
-.venv/bin/python packaging/build_appimage.py --version 0.2.2 --variant both
+.venv/bin/python packaging/build_appimage.py --version 0.2.3 --variant both
 ```
 
 Use `--variant calendar` or `--variant widget` to build just one. The script puts a
@@ -207,3 +207,11 @@ näyttää tarkistuksen tilan. UDP-portin 123 on oltava käytettävissä.
 Korjaus vaikuttaa vain sovelluksen kelloon ja tämän päivän päivämäärään;
 järjestelmäkelloa ei muuteta eikä ylläpitäjän oikeuksia tarvita. NTP-korjaus
 on istuntokohtainen; tietokoneen oma ajan synkronointi kannattaa pitää päällä.
+
+## Goottiviikonpäivät
+
+Varjomaanantai, Kallotiistai, Ruumiskeskiviikko, Kalmistotorstai,
+Kryptaperjantai, Noitalauantai ja Hornasunnuntai vastaavat tavallista
+maanantaista sunnuntaihin jatkuvaa seitsemän päivän viikkoa. Kalenterin
+sarakkeet käyttävät lyhyitä nimiä; widget ja päivän muistiinpanoikkuna
+näyttävät koko nimen.
