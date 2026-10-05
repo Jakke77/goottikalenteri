@@ -19,3 +19,6 @@ local.properties
 *.apk
 *.jks
 *.keystore
+
+*-reminders.json
+.reminders-*.tmp

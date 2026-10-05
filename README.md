@@ -5,7 +5,7 @@ Formerly Goottikalenteri. The existing GitHub repository and internal data/setti
 identifiers are retained so notes and appearance settings survive the rename.
 
 Modular Python / PyQt6 desktop application intended for Ubuntu 26.04 and 26.10
-with GNOME. Finnish interface, dark charcoal backgrounds and neon blue highlights.
+with GNOME. Finnish interface with the new Shadow Copper / Varjokupari theme: charcoal and violet shadows, subdued copper highlights, symbolic moon phases and a distinct atmosphere for each of the 13 months.
 
 ## Packages and installation
 
@@ -13,7 +13,7 @@ Required: Python 3 and PyQt6. Install Ubuntu packages and launch:
 
 ```bash
 sudo apt update
-sudo apt install python3 python3-pyqt6
+sudo apt install python3 python3-pyqt6 python3-pyqt6.qtmultimedia libnotify-bin
 cd goottikalenteri
 python3 main.py
 ```
@@ -29,6 +29,21 @@ python3 -m venv .venv
 Qt automatically selects Wayland or X11. The Ubuntu package installation supplies
 Qt's system dependencies. Calendar and notes work offline; scheduled clock checks use the public NTP service.
 
+## User launchers
+
+After installing the runtime, create calendar and widget launchers without sudo:
+
+```bash
+python3 install.py
+# With a virtual environment:
+.venv/bin/python install.py --python .venv/bin/python
+```
+
+This installs **Varjoaika** and **Varjoaika-widget** into your application menu.
+Keep this source folder and the selected Python runtime in place. Existing launcher
+files are backed up, and calendar data/settings are preserved. Login startup is
+optional in **Ilmoitukset ja ääni**.
+
 ## Calendar
 
 Years begin at 0001; each has exactly 13 months (0–12) and 30 days per month (0–29).
@@ -41,8 +56,7 @@ date; before the epoch it opens at day 0. “Tänään” returns to today.
 
 Day 0 is always a fictional new moon. The full moon at day 15 and intermediate
 phase labels are symbolic, not astronomical predictions. There are no leap days.
-This is a date calendar, not a clock or alarm application; daylight saving does
-not change its date arithmetic. Local midnight controls the today marker.
+The calendar also supports timed reminders. Daylight saving does not change its date arithmetic. Local midnight controls the today marker.
 There is no application-imposed maximum year. Both timelines continue beyond
 year 9999 using integer arithmetic. ‘Siirry vuoteen…’ jumps directly to any positive
 year. Practical limits are available memory, display width, and Python's integer
@@ -56,7 +70,7 @@ Click a day to edit its plain-text note. Enter multiple events on separate lines
 Saving blank text removes the note. Notes persist between restarts.
 
 Default storage uses Qt's XDG application-data location, normally
-`~/.local/share/Goottikalenteri/events.json`. The exact path is shown in the status
+`~/.local/share/Goottikalenteri/Goottikalenteri/events.json`. The exact path is shown in the status
 bar. Override with `python3 main.py --data-file /absolute/path/events.json`.
 JSON structure:
 
@@ -99,41 +113,65 @@ persistent settings and standalone controls. The widget and settings were render
 and visually inspected. Actual Ubuntu GNOME/Wayland desktop integration remains
 untested; the offscreen checks do not simulate a compositor.
 
-## Transparent desktop clock
+## Varjokupari desktop widget and reminders (0.6.0)
 
-Launch only the compact Conky-style clock, without the main calendar window:
+![Varjokupari calendar](previews/varjokupari-calendar.png)
+![Desktop widget](previews/varjokupari-widget.png)
+
+The Ubuntu 26.04-inspired widget complements the weather widget with darker,
+shadowy copper colours. It shows the local clock, fictional day/month/year, official
+Finnish date and the next reminder. **↗** opens the calendar, **◷** opens reminders,
+and **⚙** opens widget settings. Drag the widget to move it, or use its context menu.
+Existing font, colour, position and weather preferences are preserved.
 
 ```bash
 python3 main.py --widget-only
 ```
 
-The desktop widget contains only neon text: local time, weekday/day, month name,
-and fictional year. There is no painted background, border, title bar, month grid
-or visible button. A smaller bottom line also shows the official Finnish date, e.g.
-`1. heinäkuuta 2026`. Its font size is adjustable in settings. The background is fully
-transparent; text opacity is configurable separately.
+Widget settings provide **Varjokupari** or the original transparent-text style,
+**0–100% background opacity**, separate text opacity, font sizes, alignment,
+position locking and optional always-on-top. Zero background opacity removes the
+panel, border and orbits. Appearance changes preview immediately; Cancel restores
+previous values. Optional wttr.in weather remains available.
 
-Drag the text to reposition it. Right-click or double-click the text to open its
-separate settings window. Right-click also provides “Avaa kalenteri”, “Piilota widget”
-and “Lopeta”. In widget-only mode, closing the calendar keeps the clock running;
-“Lopeta” exits. Hiding the widget opens the calendar so its controls remain accessible.
+**Muistutukset** opens the agenda. Add, edit or remove reminders there; clicking a
+calendar day also provides **Päivän muistutukset** in its note editor. Each reminder
+has a fictional date, local time, title, optional description and enabled switch.
+Day tiles show the number of pending reminders; any number can share a day.
 
-Settings include font family, separate clock/date/year sizes, text color, text opacity,
-seconds, alignment, position locking and optional always-on-top behavior. Appearance
-changes preview immediately on an enabled widget; “Tallenna” persists them and
-“Peruuta” restores the previous appearance. The enabled flag, appearance and position
-are stored in Qt's XDG configuration. Widget settings are also accessible through
-the main calendar's “Asetukset” button.
+When due, a reminder opens an action window and, if `notify-send` is installed,
+an Ubuntu notification. **Kuittaa** closes it; **Siirrä 10 min** snoozes it. The default
+sound is an original synthetic eagle-owl-style double hoot, not a wildlife recording.
+**♫ / Ilmoitukset ja ääni** adjusts volume (0–100%), mutes sound or selects a local
+WAV, OGG, MP3, FLAC, M4A or Opus file. Codec support depends on the Qt/Ubuntu runtime;
+playback errors are shown in the notification or sound-test dialog. The settings
+window has **Kokeile** and **Pysäytä** buttons.
 
-The clock is a transparent frameless Qt surface, not a GNOME Shell extension.
-The compositor controls stacking and placement. On Wayland, native drag movement
-is used, but exact saved-position restoration is not guaranteed. On X11,
-transparency requires compositing. See the official Qt documentation:
-https://doc.qt.io/qt-6/qwindow.html#startSystemMove
-https://doc.qt.io/qt-6/qwidget.html#creating-translucent-windows
+Reminders need a running application. Closing the calendar keeps an enabled widget
+running; if pending reminders exist, it opens the widget automatically so the process
+remains accessible. **Lopeta** exits the application and stops reminders. Enable
+**Käynnistä widget ja muistutukset kirjautuessa** in sound settings for login startup.
+Suspended computers do not wake for reminders; overdue reminders are delivered once
+on waking or restarting the application. Existing delivered reminders stay delivered.
 
-An optional `goottikalenteri-widget.desktop` launcher starts only the clock.
-Copy it to `~/.local/share/applications/` and update its Exec path if needed.
+Reminders are stored separately beside the note file, normally
+`~/.local/share/Goottikalenteri/Goottikalenteri/events-reminders.json`. The original `events.json`
+format and notes remain unchanged. Custom `--data-file` paths receive their own
+`<stem>-reminders.json`. Writes are atomic and owner-only. Failed delivery-state writes
+leave the reminder pending for retry; malformed files are never overwritten.
+The deadline is a UTC instant computed from the machine's local timezone when saved.
+Changing timezone later keeps that instant; edit the reminder to use a new local time.
+Nonexistent DST spring times are rejected; ambiguous autumn times use the system's
+first occurrence chosen at saving. Scheduled reminders support civil years up to 9999;
+ordinary notes retain the calendar's unbounded-year support.
+
+For system Python, install `python3-pyqt6.qtmultimedia` for sound. A PyQt6 virtual
+environment or AppImage includes the module. `libnotify-bin` supplies `notify-send`;
+the action window remains available without it.
+
+The transparent clock is a frameless Qt surface. Wayland controls exact placement;
+X11/XWayland can restore saved geometry. Both views share the same note-file lock
+and running process. Settings and launch-mode identifiers remain Goottikalenteri.
 
 ## Full calendar navigation
 
@@ -150,7 +188,7 @@ MIT License. Copyright (c) 2026 Jakke77. See [LICENSE](LICENSE).
 
 ## Two AppImage launchers
 
-The private GitHub release provides two independent x86_64 downloads, with Python
+The GitHub release provides two independent x86_64 downloads, with Python
 and PyQt6 included. Choose the calendar or the transparent desktop clock:
 
 ```bash

@@ -11,27 +11,8 @@ from time_service import TimeService
 from PyQt6.QtCore import QTimer, QSettings
 from widget import DesktopWidget, SettingsDialog, load_options
 
-STYLE = '''
-QWidget { background: #090b10; color: #dbe6ef; font-size: 14px; }
-QLabel#title { color: #25c5ff; font-size: 30px; font-weight: bold; }
-QLabel#muted { color: #91a4b8; }
-QPushButton { background: #141a24; border: 1px solid #2a465e;
- border-radius: 7px; padding: 10px 14px; }
-QPushButton:hover { background: #102d42; border-color: #25c5ff; }
-QPushButton:focus { border: 2px solid #62dcff; }
-QPushButton:pressed, QPushButton:checked { background: #123e59; border: 2px solid #25c5ff; }
-QPushButton:disabled { color: #536070; border-color: #222c38; }
-QPushButton[isToday="true"] { background: #102d42; border: 2px solid #25c5ff; }
-QPushButton[hasNote="true"] { border-color: #25c5ff; color: #65d8ff; }
-QTextEdit { background: #111721; border: 1px solid #25c5ff;
- border-radius: 6px; padding: 12px; selection-background-color: #14577a; }
-QComboBox { background: #141a24; border: 1px solid #25c5ff; padding: 8px; }
-QComboBox QAbstractItemView { background: #141a24; color: #dbe6ef; selection-background-color: #14577a; }
-QScrollArea { border: none; }
-QScrollBar:vertical { background: #111721; width: 12px; }
-QScrollBar::handle:vertical { background: #285574; min-height: 24px; }
-QToolTip { background: #141a24; color: #dbe6ef; border: 1px solid #25c5ff; }
-'''
+from theme import STYLE, LunarBanner, MONTH_MOTIFS, DayButton
+from reminder_ui import ReminderController, AgendaDialog, SoundSettingsDialog
 
 class NoteDialog(QDialog):
     def __init__(self, date, store, parent=None):
@@ -51,6 +32,10 @@ class NoteDialog(QDialog):
         self.editor.setPlainText(store.get(date))
         self.editor.setAccessibleName('Päivän muistiinpanot')
         layout.addWidget(self.editor)
+        reminders = QPushButton('◷ Päivän muistutukset…')
+        reminders.clicked.connect(lambda: AgendaDialog(parent, date, self).exec())
+        reminders.setEnabled(parent is not None and hasattr(parent, 'reminders'))
+        layout.addWidget(reminders)
         buttons = QDialogButtonBox()
         save = buttons.addButton('Tallenna', QDialogButtonBox.ButtonRole.AcceptRole)
         cancel = buttons.addButton('Peruuta', QDialogButtonBox.ButtonRole.RejectRole)
@@ -96,7 +81,7 @@ class CalendarWindow(QMainWindow):
         except ValueError:
             self.date = CalendarDate()
         self.setWindowTitle('Varjoaika')
-        self.resize(1080, 760)
+        self.resize(1080, 900)
         self.setMinimumSize(680, 540)
         root = QWidget()
         self.setCentralWidget(root)
@@ -110,6 +95,8 @@ class CalendarWindow(QMainWindow):
         self.title.setObjectName('title')
         self.title.setWordWrap(True)
         layout.addWidget(self.title)
+        self.banner = LunarBanner()
+        layout.addWidget(self.banner)
         self.subtitle = QLabel('13 kuukautta · 30 päivää · 7 päivän viikko · 24 h / päivä · Päivä 0: uusikuu')
         self.subtitle.setObjectName('muted')
         self.subtitle.setWordWrap(True)
@@ -121,7 +108,7 @@ class CalendarWindow(QMainWindow):
         self.nav_button('Tänään', self.go_today, nav, 'Näytä tämä päivä')
         self.nav_button('Kuu ›', lambda: self.navigate(months=1), nav, 'Seuraava kuukausi')
         self.nav_button('Vuosi »', lambda: self.navigate(years=1), nav, 'Seuraava vuosi')
-        self.nav_button('Asetukset', self.open_settings, nav, 'Asetukset')
+        self.nav_button('⚙', self.open_settings, nav, 'Widgetin asetukset')
         jump_row = QHBoxLayout()
         self.nav_button('Siirry vuoteen…', self.jump_year, jump_row, 'Siirry haluttuun vuoteen')
         self.month_picker = QComboBox()
@@ -130,7 +117,8 @@ class CalendarWindow(QMainWindow):
         self.month_picker.currentIndexChanged.connect(self.select_month)
         jump_row.addWidget(self.month_picker)
         self.nav_button('Vuoden kaikki kuukaudet', self.year_overview, jump_row, 'Näytä kaikki 13 kuukautta')
-        jump_row.addStretch()
+        self.nav_button('◷ Muistutukset', self.open_reminders, jump_row, 'Muistutukset')
+        self.nav_button('♫', self.open_sound_settings, jump_row, 'Ilmoitukset ja ääni')
         layout.addLayout(nav)
         layout.addLayout(jump_row)
         scroll = QScrollArea()
@@ -146,9 +134,9 @@ class CalendarWindow(QMainWindow):
             grid.addWidget(label, 0, column)
         self.days = []
         for day in range(30):
-            button = QPushButton()
+            button = DayButton()
             button.setCheckable(True)
-            button.setMinimumSize(88, 90)
+            button.setMinimumSize(88, 68)
             button.clicked.connect(lambda checked=False, d=day: self.edit_day(d))
             grid.addWidget(button, 1 + day // 7, day % 7)
             self.days.append(button)
@@ -168,6 +156,7 @@ class CalendarWindow(QMainWindow):
                                  ('Alt+Up', lambda: self.navigate(years=1)),
                                  ('Alt+Down', lambda: self.navigate(years=-1))]:
             QShortcut(QKeySequence(sequence), self).activated.connect(action)
+        self.reminders = ReminderController(self)
         self.refresh()
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh)
@@ -196,13 +185,23 @@ class CalendarWindow(QMainWindow):
             self.set_widget_enabled(dialog.enabled.isChecked())
             self.settings.sync()
 
+    def open_reminders(self):
+        AgendaDialog(self).exec()
+
+    def open_sound_settings(self):
+        SoundSettingsDialog(self).exec()
+
     def closeEvent(self, event):
-        if self.widget_only and self.widget_enabled:
+        if self.widget_enabled or self.reminders.store.pending():
+            if not self.widget_enabled:
+                self.set_widget_enabled(True, persist=False)
             self.hide()
             event.ignore()
             return
         if self.desktop_widget is not None:
             self.desktop_widget.hide()
+        self.reminders.shutdown()
+        self.time_service.shutdown()
         self.settings.sync()
         super().closeEvent(event)
         if self.widget_only:
@@ -271,6 +270,11 @@ class CalendarWindow(QMainWindow):
 
     def refresh(self):
         self.title.setText(f'{self.date.month}. {MONTH_NAMES[self.date.month]}  ·  Vuosi {self.date.year:04d}')
+        motif, accent = MONTH_MOTIFS[self.date.month]
+        self.title.setStyleSheet(f'color: {accent}; font-size: 30px; font-weight: bold;')
+        self.banner.day, self.banner.month = self.date.day, self.date.month
+        self.banner.update()
+        self.subtitle.setText(f'{motif} · 13 kuuta · 30 päivää · Kuun vaiheet ovat symbolisia')
         self.month_picker.blockSignals(True)
         self.month_picker.setCurrentIndex(self.date.month)
         self.month_picker.blockSignals(False)
@@ -287,19 +291,31 @@ class CalendarWindow(QMainWindow):
             self.grid.removeWidget(button)
             self.grid.addWidget(button, 1 + (start + day) // 7, (start + day) % 7)
             note = self.store.get(date)
+            reminders = self.reminders.store.on_date(date)
+            pending = sum(value['enabled'] and value['delivered'] is None for value in reminders)
             count += bool(note)
             phase = 'UUSIKUU' if day == 0 else ('TÄYSIKUU' if day == 15 else '')
             today = date == current
-            button.setText(f'{day}' + ('  TÄNÄÄN' if today else '') + f'\n{phase}' + ('\n● Muistiinpano' if note else ''))
+            labels = [f'{day}' + ('  TÄNÄÄN' if today else '')]
+            if phase:
+                labels.append(phase)
+            if note:
+                labels.append('● Merkintä')
+            if pending:
+                labels.append(f'◷ {pending} ' + ('muistutus' if pending == 1 else 'muistutusta'))
+            button.setText('\n'.join(labels))
+            button.setProperty('moonDay', day)
+            button.setProperty('moonAccent', accent)
             button.setProperty('isToday', today)
             button.setChecked(day == self.date.day)
             button.setProperty('hasNote', bool(note))
-            button.setAccessibleName(date.label + (', muistiinpano' if note else ''))
+            button.setProperty('hasReminder', bool(pending))
+            button.setAccessibleName(date.label + (', muistiinpano' if note else '') + (f', {pending} muistutusta' if pending else ''))
             button.setToolTip(f'{moon_label(day)}\n{note[:240]}' if note else moon_label(day))
             button.style().unpolish(button)
             button.style().polish(button)
         today_label = f'Tänään: {current.label}' if current else 'Ennen ajanlaskun alkua'
-        self.footer.setText(f'{today_label}\n{count} päivää muistiinpanoilla · 390 päivää vuodessa')
+        self.footer.setText(f'{today_label}\n{count} päivää merkinnöillä · {len(self.reminders.store.pending())} odottavaa muistutusta · 390 päivää vuodessa')
 
     def edit_day(self, day):
         self.date = CalendarDate(self.date.year, self.date.month, day)

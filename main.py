@@ -67,7 +67,12 @@ def main():
         QMessageBox.critical(None, 'Tietojen avaaminen epäonnistui',
                              f'{path}\n\n{error}\n\nAlkuperäistä tiedostoa ei muutettu.')
         return 1
-    window = CalendarWindow(store, restore_widget=False)
+    try:
+        window = CalendarWindow(store, restore_widget=False)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        lock.unlock()
+        QMessageBox.critical(None, 'Muistutusten avaaminen epäonnistui', str(error))
+        return 1
 
     def show_mode(mode):
         if mode == 'widget':
@@ -89,6 +94,7 @@ def main():
     try:
         return app.exec()
     finally:
+        window.reminders.shutdown()
         window.time_service.shutdown()
         server.close()
         lock.unlock()

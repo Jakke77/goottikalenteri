@@ -60,6 +60,7 @@ class TimeService(QObject):
     def __init__(self, settings, parent=None):
         super().__init__(parent)
         self.settings = settings
+        self.closed = False
         self.offset = 0.0
         self.worker = None
         self.retry_at = 0.0
@@ -73,6 +74,8 @@ class TimeService(QObject):
         return datetime.fromtimestamp(time.time() + self.offset)
 
     def check_due(self):
+        if self.closed:
+            return
         due = latest_due(self.now())
         if (due is None or self.worker is not None or time.monotonic() < self.retry_at or
             self.settings.value('time/last_due', '') == due.isoformat()):
@@ -85,6 +88,8 @@ class TimeService(QObject):
         self.worker.start()
 
     def succeeded(self, offset):
+        if self.closed:
+            return
         self.offset = offset
         self.settings.setValue('time/last_due', self.pending_due)
         self.settings.setValue('time/last_check', self.now().isoformat())
@@ -93,6 +98,8 @@ class TimeService(QObject):
         self.changed.emit()
 
     def failed(self, error):
+        if self.closed:
+            return
         self.status = 'Aikapalvelin ei vastannut; uusi yritys tunnin kuluttua'
         self.retry_at = time.monotonic() + 3600
 
@@ -101,6 +108,7 @@ class TimeService(QObject):
         self.worker = None
 
     def shutdown(self):
+        self.closed = True
         self.timer.stop()
         if self.worker is not None:
             self.worker.wait(6500)

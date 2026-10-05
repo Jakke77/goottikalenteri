@@ -1,21 +1,23 @@
 """Transparent, movable desktop clock and its separate settings dialog."""
 from datetime import datetime
-from PyQt6.QtCore import Qt, QTimer, QPoint
-from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter
+from PyQt6.QtCore import Qt, QTimer, QPoint, QRectF
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen, QLinearGradient
 from PyQt6.QtWidgets import (QApplication, QWidget, QDialog, QCheckBox,
     QDialogButtonBox, QVBoxLayout, QFormLayout, QFontComboBox, QSpinBox,
-    QComboBox, QPushButton, QColorDialog, QMenu, QLabel, QLineEdit)
+    QComboBox, QPushButton, QColorDialog, QMenu, QLabel, QLineEdit, QToolButton)
 from weather import WeatherService
-from calendar_model import from_gregorian, MONTH_NAMES, weekday, WEEKDAY_NAMES
+from calendar_model import CalendarDate, from_gregorian, MONTH_NAMES, weekday, WEEKDAY_NAMES
+from reminders import parse_instant
 
 FINNISH_MONTHS = ('tammikuuta', 'helmikuuta', 'maaliskuuta', 'huhtikuuta',
                   'toukokuuta', 'kesäkuuta', 'heinäkuuta', 'elokuuta',
                   'syyskuuta', 'lokakuuta', 'marraskuuta', 'joulukuuta')
 
 DEFAULTS = {
-    'font': 'DejaVu Sans', 'clock_size': 40, 'date_size': 15, 'year_size': 13, 'official_size': 11,
-    'opacity': 100, 'color': '#25c5ff', 'seconds': True, 'locked': False,
+    'font': 'Ubuntu', 'clock_size': 40, 'date_size': 15, 'year_size': 13, 'official_size': 11,
+    'opacity': 100, 'color': '#d9b3a0', 'seconds': True, 'locked': False,
     'on_top': False, 'alignment': 'left',
+    'theme': 'shadow', 'background_opacity': 32, 'agenda': True,
     'weather_enabled': False, 'weather_auto': True, 'weather_city': '', 'weather_size': 11,
 }
 
@@ -33,6 +35,17 @@ class DesktopWidget(QWidget):
         self.setAutoFillBackground(False)
         # Override the application's opaque global QWidget stylesheet.
         self.setStyleSheet('background: transparent; border: none;')
+        self.buttons = []
+        for text, tip, action in [('↗', 'Avaa kalenteri', self.open_calendar),
+                                  ('◷', 'Muistutukset', owner.open_reminders),
+                                  ('⚙', 'Widgetin asetukset', owner.open_settings)]:
+            button = QToolButton(self)
+            button.setText(text)
+            button.setToolTip(tip)
+            button.setAccessibleName(tip)
+            button.clicked.connect(action)
+            button.setStyleSheet('QToolButton {color: #e3bea9; background: transparent; border: none; font-size: 17px;} QToolButton:hover {background: #39242d; border-radius: 5px;}')
+            self.buttons.append(button)
         self.lines = []
         self.origin = None
         self.weather = WeatherService(settings, self)
@@ -52,7 +65,7 @@ class DesktopWidget(QWidget):
         self.timer.start(1000)
 
     def apply_options(self, options):
-        self.options = dict(options)
+        self.options = {**DEFAULTS, **options}
         self.weather.configure(self.options)
         visible = self.isVisible()
         position = self.pos()
@@ -87,10 +100,29 @@ class DesktopWidget(QWidget):
                 font.setBold(True)
             for line in text.splitlines():
                 self.lines.append((line, font))
+        if self.options['agenda'] and hasattr(self.owner, 'reminders'):
+            pending = self.owner.reminders.store.pending()
+            if self.options['theme'] == 'shadow':
+                self.lines.append(('SEURAAVA HUHUILU', QFont(self.options['font'], 9)))
+            if pending:
+                value = pending[0]
+                instant = parse_instant(value['due']).astimezone()
+                date = CalendarDate.from_key(value['date'])
+                title = QFontMetrics(QFont(self.options['font'], 11)).elidedText(value['title'], Qt.TextElideMode.ElideRight, 330)
+                self.lines.append((title, QFont(self.options['font'], 11)))
+                self.lines.append((f'{date.day}. {MONTH_NAMES[date.month]} · {instant:%H:%M}', QFont(self.options['font'], 10)))
+            else:
+                self.lines.append(('Ei odottavia muistutuksia', QFont(self.options['font'], 10)))
         width = max((QFontMetrics(font).horizontalAdvance(text)
                      for text, font in self.lines), default=100) + 32
         height = sum(QFontMetrics(font).height() + 5 for _, font in self.lines) + 24
+        if self.options['theme'] == 'shadow':
+            width = max(350, width + 16)
+            height += 48
         self.setFixedSize(width, height)
+        for i, button in enumerate(self.buttons):
+            button.setVisible(self.options['theme'] == 'shadow')
+            button.setGeometry(width - 112 + i * 32, 10, 28, 28)
         self.setAccessibleName(clock + ' · ' + date_text.replace('\n', ' · ') + ' · ' + year_text + ' · ' + official_text)
         self.update()
 
@@ -100,7 +132,25 @@ class DesktopWidget(QWidget):
         color = QColor(self.options['color'])
         color.setAlpha(round(255 * self.options['opacity'] / 100))
         shadow = QColor(0, 0, 0, round(180 * self.options['opacity'] / 100))
-        y = 12
+        themed = self.options['theme'] == 'shadow'
+        if themed and self.options['background_opacity'] > 0:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            alpha = self.options['background_opacity'] / 100
+            gradient = QLinearGradient(0, 0, self.width(), self.height())
+            gradient.setColorAt(0, QColor(33, 22, 34, round(255 * alpha)))
+            gradient.setColorAt(1, QColor(8, 10, 18, round(255 * alpha)))
+            painter.setBrush(gradient)
+            painter.setPen(QPen(QColor(175, 115, 91, round(150 * alpha)), 1))
+            painter.drawRoundedRect(QRectF(1, 1, self.width() - 2, self.height() - 2), 16, 16)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor(190, 118, 88, round(48 * alpha)), 1))
+            painter.drawEllipse(QRectF(self.width() - 225, -70, 290, 290))
+            painter.drawEllipse(QRectF(self.width() - 260, -110, 360, 360))
+        if themed:
+            painter.setFont(QFont(self.options['font'], 9))
+            painter.setPen(QColor('#ba9586'))
+            painter.drawText(20, 28, '◔  VARJOAIKA')
+        y = 48 if themed else 12
         for text, font in self.lines:
             metrics = QFontMetrics(font)
             painter.setFont(font)
@@ -144,6 +194,8 @@ class DesktopWidget(QWidget):
         # Keep the menu dark; the widget itself has no visible controls or frame.
         menu = QMenu(self.owner)
         menu.addAction('Widgetin asetukset…', self.owner.open_settings)
+        menu.addAction('Muistutukset…', self.owner.open_reminders)
+        menu.addAction('Ilmoitukset ja ääni…', self.owner.open_sound_settings)
         status = menu.addAction(self.owner.time_service.status)
         status.setEnabled(False)
         menu.addAction('Päivitä sää nyt', lambda: self.weather.refresh(force=True))
@@ -179,10 +231,15 @@ class SettingsDialog(QDialog):
         self.setWindowTitle('Työpöytäwidgetin asetukset')
         self.resize(470, 520)
         layout = QVBoxLayout(self)
-        self.enabled = QCheckBox('Näytä läpinäkyvä työpöytäkello')
+        self.enabled = QCheckBox('Näytä työpöytäwidget')
         self.enabled.setChecked(owner.widget_enabled)
         layout.addWidget(self.enabled)
         form = QFormLayout()
+        self.theme = QComboBox()
+        self.theme.addItem('Varjokupari · Ubuntu 26.04', 'shadow')
+        self.theme.addItem('Pelkkä läpinäkyvä teksti', 'transparent')
+        self.theme.setCurrentIndex(self.theme.findData(self.original['theme']))
+        form.addRow('Teema', self.theme)
         self.font_picker = QFontComboBox()
         self.font_picker.setCurrentFont(QFont(self.original['font']))
         form.addRow('Fontti', self.font_picker)
@@ -193,7 +250,8 @@ class SettingsDialog(QDialog):
             ('year_size', 'Vuosiluvun tekstikoko', 8, 100, ' pt'),
             ('official_size', 'Virallisen päivämäärän tekstikoko', 8, 100, ' pt'),
             ('weather_size', 'Sääennusteen tekstikoko', 8, 40, ' pt'),
-            ('opacity', 'Tekstin peittävyys', 15, 100, ' %')):
+            ('opacity', 'Tekstin peittävyys', 15, 100, ' %'),
+            ('background_opacity', 'Taustan peittävyys', 0, 100, ' %')):
             control = QSpinBox()
             control.setRange(minimum, maximum)
             control.setSuffix(suffix)
@@ -214,7 +272,7 @@ class SettingsDialog(QDialog):
         self.city.setPlaceholderText('Esim. Helsinki, Finland tai kylän nimi')
         form.addRow('Sään paikkakunta', self.city)
         self.city.textChanged.connect(self.preview)
-        for key, title in [('weather_enabled', 'Näytä wttr.in-sää (3 päivää)'),
+        for key, title in [('agenda', 'Näytä seuraava muistutus'), ('weather_enabled', 'Näytä wttr.in-sää (3 päivää)'),
                            ('weather_auto', 'Hae sijainti automaattisesti IP-osoitteesta'),
                            ('seconds', 'Näytä sekunnit'), ('locked', 'Lukitse sijainti'),
                            ('on_top', 'Pidä muiden ikkunoiden päällä')]:
@@ -238,6 +296,7 @@ class SettingsDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+        self.theme.currentIndexChanged.connect(self.preview)
         self.font_picker.currentFontChanged.connect(self.preview)
         self.alignment.currentIndexChanged.connect(self.preview)
         for control in self.controls.values():
@@ -247,7 +306,7 @@ class SettingsDialog(QDialog):
                 control.toggled.connect(self.preview)
 
     def options(self):
-        result = {'font': self.font_picker.currentFont().family(), 'color': self.color,
+        result = {'theme': self.theme.currentData(), 'font': self.font_picker.currentFont().family(), 'color': self.color,
                   'alignment': self.alignment.currentData(), 'weather_city': self.city.text()}
         for key, control in self.controls.items():
             result[key] = control.value() if isinstance(control, QSpinBox) else control.isChecked()
@@ -264,6 +323,7 @@ class SettingsDialog(QDialog):
             self.preview()
 
     def reset_defaults(self):
+        self.theme.setCurrentIndex(self.theme.findData(DEFAULTS['theme']))
         self.city.setText(DEFAULTS['weather_city'])
         self.font_picker.setCurrentFont(QFont(DEFAULTS['font']))
         for key, control in self.controls.items():

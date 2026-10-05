@@ -41,9 +41,9 @@ def fetch(url, destination, checksum):
 def source_zip(destination):
     files = ['.gitignore', 'LICENSE', 'README.md', 'THIRD_PARTY_NOTICES.md',
              'requirements.txt', 'requirements-build.txt', 'calendar_model.py',
-             'main.py', 'instance.py', 'time_service.py', 'storage.py', 'ui.py', 'widget.py', 'weather.py', 'self_test.py',
+             'main.py', 'install.py', 'instance.py', 'time_service.py', 'storage.py', 'ui.py', 'widget.py', 'weather.py', 'reminders.py', 'reminder_ui.py', 'sound.py', 'theme.py', 'self_test.py',
              'goottikalenteri.desktop', 'goottikalenteri-widget.desktop']
-    files += [str(path.relative_to(ROOT)) for directory in ('tests', 'packaging', 'previews', '.github', 'android')
+    files += [str(path.relative_to(ROOT)) for directory in ('assets', 'tests', 'packaging', 'previews', '.github', 'android')
               for path in (ROOT / directory).rglob('*')
               if path.is_file() and not any(part in path.parts for part in ('__pycache__', '.gradle', 'build'))]
     with zipfile.ZipFile(destination, 'w', zipfile.ZIP_DEFLATED) as archive:
@@ -85,7 +85,7 @@ def system_notices(bundle, docs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', default='0.5.0')
+    parser.add_argument('--version', default='0.6.0')
     parser.add_argument('--variant', choices=('calendar', 'widget', 'both'), default='both')
     parser.add_argument('--skip-freeze', action='store_true', help='Reuse an existing frozen bundle')
     parser.add_argument('--frozen-dir', type=Path)
@@ -105,7 +105,7 @@ def main():
         run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir',
              '--name', 'goottikalenteri', '--distpath', bundle.parent, '--workpath', work / 'freeze',
              '--specpath', work, '--copy-metadata', 'PyQt6', '--copy-metadata', 'PyQt6-Qt6',
-             '--copy-metadata', 'PyQt6-sip', ROOT / 'main.py'], cwd=ROOT)
+             '--copy-metadata', 'PyQt6-sip', '--add-data', str(ROOT / 'assets') + ':assets', ROOT / 'main.py'], cwd=ROOT)
     appdir = work / 'Goottikalenteri.AppDir'
     if appdir.exists():
         shutil.rmtree(appdir)

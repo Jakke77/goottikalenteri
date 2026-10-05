@@ -27,6 +27,9 @@ class WidgetTests(unittest.TestCase):
         self.app.processEvents()
 
     def tearDown(self):
+        self.owner.widget_only = False
+        self.owner.set_widget_enabled(False)
+        self.owner.reminders.shutdown()
         self.owner.close()
         self.owner.deleteLater()
         self.app.processEvents()

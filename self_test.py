@@ -33,6 +33,8 @@ def run(app):
         assert widget.options['clock_size'] == 65
         dialog.reject()
         assert widget.options == load_options(window.settings)
+        window.set_widget_enabled(False)
+        window.reminders.shutdown()
         window.close()
         widget.deleteLater()
         window.deleteLater()
