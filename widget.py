@@ -33,6 +33,7 @@ class DesktopWidget(QWidget):
         self.owner, self.settings = owner, settings
         self.setWindowTitle('Varjoaika-widget')
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
         self.setAutoFillBackground(False)
         # Override the application's opaque global QWidget stylesheet.
