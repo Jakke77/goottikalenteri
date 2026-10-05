@@ -19,30 +19,7 @@ def sound_options(settings):
                 path=settings.value('reminders/sound_file', '', type=str))
 
 
-def autostart_path():
-    return Path(os.environ.get('XDG_CONFIG_HOME', str(Path.home() / '.config'))) / 'autostart' / 'varjoaika-widget.desktop'
-
-
-def set_autostart(enabled):
-    path = autostart_path()
-    if not enabled:
-        if path.exists():
-            path.unlink()
-        return
-    def quote(value):
-        return '"' + str(value).replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$').replace('%', '%%') + '"'
-    command = quote(sys.executable)
-    if not getattr(sys, 'frozen', False):
-        command += ' ' + quote(Path(__file__).resolve().with_name('main.py'))
-    command += ' --widget-only'
-    # AppImage runtime path must point to the original image, not a temporary mount.
-    if os.environ.get('APPIMAGE'):
-        command = quote(os.environ['APPIMAGE']) + ' --widget-only'
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix('.tmp')
-    temporary.write_text('[Desktop Entry]\nType=Application\nName=Varjoaika\nExec=' + command +
-                         '\nTerminal=false\nX-GNOME-Autostart-enabled=true\n', encoding='utf-8')
-    temporary.replace(path)
+from startup import autostart_path, startup_choices, set_autostart
 
 
 class ReminderEditor(QDialog):
@@ -227,9 +204,13 @@ class SoundSettingsDialog(QDialog):
             button.clicked.connect(action)
             actions.addWidget(button)
         layout.addLayout(actions)
-        self.autostart = QCheckBox('Käynnistä widget ja muistutukset kirjautuessa')
-        self.autostart.setChecked(autostart_path().exists())
+        widget, calendar = startup_choices()
+        self.autostart = QCheckBox('Avaa widget kirjautuessa')
+        self.autostart.setChecked(widget)
+        self.autostart_calendar = QCheckBox('Avaa kalenteri kirjautuessa')
+        self.autostart_calendar.setChecked(calendar)
         layout.addWidget(self.autostart)
+        layout.addWidget(self.autostart_calendar)
         hint = QLabel('Oletus on oma huuhkajan huhuilua jäljittelevä ääni.\n'
                       'Oma paikallinen WAV, OGG, MP3 tai FLAC: toisto riippuu Qt:n ja Ubuntun koodekeista.\n'
                       '0 % mykistää. Ilmoituksen teksti näkyy silti. Lopeta sulkee myös muistutukset.')
@@ -260,7 +241,7 @@ class SoundSettingsDialog(QDialog):
             QMessageBox.warning(self, 'Äänitiedostoa ei löydy', 'Valitse olemassa oleva paikallinen äänitiedosto.')
             return
         try:
-            set_autostart(self.autostart.isChecked())
+            set_autostart(self.autostart.isChecked(), self.autostart_calendar.isChecked())
         except OSError as error:
             QMessageBox.warning(self, 'Automaattikäynnistys epäonnistui', str(error))
             return

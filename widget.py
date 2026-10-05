@@ -4,10 +4,11 @@ from PyQt6.QtCore import Qt, QTimer, QPoint, QRectF
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen, QLinearGradient
 from PyQt6.QtWidgets import (QApplication, QWidget, QDialog, QCheckBox,
     QDialogButtonBox, QVBoxLayout, QFormLayout, QFontComboBox, QSpinBox,
-    QComboBox, QPushButton, QColorDialog, QMenu, QLabel, QLineEdit, QToolButton)
+    QComboBox, QPushButton, QColorDialog, QMenu, QLabel, QLineEdit, QToolButton, QScrollArea)
 from weather import WeatherService
 from calendar_model import CalendarDate, from_gregorian, MONTH_NAMES, weekday, WEEKDAY_NAMES
 from reminders import parse_instant
+from startup import startup_choices, set_autostart
 
 FINNISH_MONTHS = ('tammikuuta', 'helmikuuta', 'maaliskuuta', 'huhtikuuta',
                   'toukokuuta', 'kesäkuuta', 'heinäkuuta', 'elokuuta',
@@ -76,6 +77,16 @@ class DesktopWidget(QWidget):
         if visible:
             self.show()
             self.move(position)
+            self.clamp_position()
+
+    def clamp_position(self):
+        screen = self.screen() or QApplication.primaryScreen()
+        if screen:
+            area = screen.availableGeometry()
+            x = max(area.left(), min(self.x(), area.right() - self.width() + 1))
+            y = max(area.top(), min(self.y(), area.bottom() - self.height() + 1))
+            if QPoint(x, y) != self.pos():
+                self.move(x, y)
 
     def update_clock(self):
         now = self.owner.time_service.now() if hasattr(self.owner, "time_service") else datetime.now()
@@ -120,6 +131,7 @@ class DesktopWidget(QWidget):
             width = max(350, width + 16)
             height += 48
         self.setFixedSize(width, height)
+        self.clamp_position()
         for i, button in enumerate(self.buttons):
             button.setVisible(self.options['theme'] == 'shadow')
             button.setGeometry(width - 112 + i * 32, 10, 28, 28)
@@ -229,8 +241,14 @@ class SettingsDialog(QDialog):
         self.owner = owner
         self.original = load_options(owner.settings)
         self.setWindowTitle('Työpöytäwidgetin asetukset')
-        self.resize(470, 520)
-        layout = QVBoxLayout(self)
+        self.resize(650, 820)
+        outer = QVBoxLayout(self)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        body = QWidget()
+        layout = QVBoxLayout(body)
+        scroll.setWidget(body)
+        outer.addWidget(scroll, 1)
         self.enabled = QCheckBox('Näytä työpöytäwidget')
         self.enabled.setChecked(owner.widget_enabled)
         layout.addWidget(self.enabled)
@@ -280,6 +298,13 @@ class SettingsDialog(QDialog):
             control.setChecked(self.original[key])
             self.controls[key] = control
             layout.addWidget(control)
+        startup_widget, startup_calendar = startup_choices()
+        self.startup_widget = QCheckBox('Avaa widget kirjautuessa')
+        self.startup_widget.setChecked(startup_widget)
+        self.startup_calendar = QCheckBox('Avaa kalenteri kirjautuessa')
+        self.startup_calendar.setChecked(startup_calendar)
+        outer.addWidget(self.startup_widget)
+        outer.addWidget(self.startup_calendar)
         reset = QPushButton('Palauta ulkoasun oletukset')
         reset.clicked.connect(self.reset_defaults)
         layout.addWidget(reset)
@@ -295,7 +320,7 @@ class SettingsDialog(QDialog):
         buttons.addButton('Peruuta', QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        outer.addWidget(buttons)
         self.theme.currentIndexChanged.connect(self.preview)
         self.font_picker.currentFontChanged.connect(self.preview)
         self.alignment.currentIndexChanged.connect(self.preview)
@@ -304,6 +329,15 @@ class SettingsDialog(QDialog):
                 control.valueChanged.connect(self.preview)
             else:
                 control.toggled.connect(self.preview)
+
+    def accept(self):
+        try:
+            set_autostart(self.startup_widget.isChecked(), self.startup_calendar.isChecked())
+        except OSError as error:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, 'Automaattikäynnistys epäonnistui', str(error))
+            return
+        super().accept()
 
     def options(self):
         result = {'theme': self.theme.currentData(), 'font': self.font_picker.currentFont().family(), 'color': self.color,

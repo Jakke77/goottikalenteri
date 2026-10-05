@@ -7,6 +7,24 @@ identifiers are retained so notes and appearance settings survive the rename.
 Modular Python / PyQt6 desktop application intended for Ubuntu 26.04 and 26.10
 with GNOME. Finnish interface with the new Shadow Copper / Varjokupari theme: charcoal and violet shadows, subdued copper highlights, symbolic moon phases and a distinct atmosphere for each of the 13 months.
 
+## Ubuntu deb package
+
+[Download the latest tested deb package and user installer](https://github.com/Jakke77/goottikalenteri/archive/refs/heads/apt.zip).
+Both calendar and widget are included. GitHub Actions publishes a new package to the
+`apt` download branch after tests pass. [Finnish installation instructions](docs/USER_INSTALL.md).
+
+```bash
+sudo apt install ./varjoaika_*.deb
+# Or install into your home without root, once Qt dependencies are available:
+python3 install-user.py ./varjoaika_*.deb
+```
+
+Widget settings and sound settings both offer separate **Avaa widget kirjautuessa**
+and **Avaa kalenteri kirjautuessa** checkboxes. Select both to open both views in one
+process. Rootless installer flags are `--autostart-widget` and `--autostart-calendar`.
+Existing login startup is preserved. Package installation never edits personal data
+or starts a root GUI. The `apt` branch is a download channel, not an APT repository URL.
+
 ## Packages and installation
 
 Required: Python 3 and PyQt6. Install Ubuntu packages and launch:
@@ -150,7 +168,7 @@ window has **Kokeile** and **Pysäytä** buttons.
 Reminders need a running application. Closing the calendar keeps an enabled widget
 running; if pending reminders exist, it opens the widget automatically so the process
 remains accessible. **Lopeta** exits the application and stops reminders. Enable
-**Käynnistä widget ja muistutukset kirjautuessa** in sound settings for login startup.
+**Avaa widget kirjautuessa** in sound settings for login startup.
 Suspended computers do not wake for reminders; overdue reminders are delivered once
 on waking or restarting the application. Existing delivered reminders stay delivered.
 

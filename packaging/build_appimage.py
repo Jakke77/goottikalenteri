@@ -41,9 +41,9 @@ def fetch(url, destination, checksum):
 def source_zip(destination):
     files = ['.gitignore', 'LICENSE', 'README.md', 'THIRD_PARTY_NOTICES.md',
              'requirements.txt', 'requirements-build.txt', 'calendar_model.py',
-             'main.py', 'install.py', 'instance.py', 'time_service.py', 'storage.py', 'ui.py', 'widget.py', 'weather.py', 'reminders.py', 'reminder_ui.py', 'sound.py', 'theme.py', 'self_test.py',
+             'main.py', 'install.py', 'instance.py', 'time_service.py', 'storage.py', 'ui.py', 'widget.py', 'weather.py', 'reminders.py', 'reminder_ui.py', 'sound.py', 'startup.py', 'theme.py', 'self_test.py',
              'goottikalenteri.desktop', 'goottikalenteri-widget.desktop']
-    files += [str(path.relative_to(ROOT)) for directory in ('assets', 'tests', 'packaging', 'previews', '.github', 'android')
+    files += [str(path.relative_to(ROOT)) for directory in ('assets', 'docs', 'tests', 'packaging', 'previews', '.github', 'android')
               for path in (ROOT / directory).rglob('*')
               if path.is_file() and not any(part in path.parts for part in ('__pycache__', '.gradle', 'build'))]
     with zipfile.ZipFile(destination, 'w', zipfile.ZIP_DEFLATED) as archive:

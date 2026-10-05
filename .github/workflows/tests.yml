@@ -17,3 +17,24 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests -v
       - run: python main.py --self-test
+      - run: python tests/deb_smoke.py
+  package:
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: varjoaika-deb-channel
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Build versioned Ubuntu package
+        run: |
+          DATE=$(git show -s --format=%ct HEAD)
+          python3 packaging/build_deb.py --version "0.6.0+git${DATE}.${GITHUB_SHA:0:7}"
+          python3 packaging/publish_channel.py dist/*.deb build/channel
+      - name: Publish package and user installer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 packaging/upload_channel.py build/channel

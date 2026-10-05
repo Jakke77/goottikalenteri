@@ -20,6 +20,8 @@ def main():
                        const='widget', help='Show only the transparent desktop clock')
     modes.add_argument('--calendar', dest='launch_mode', action='store_const',
                        const='calendar', help='Show the calendar window')
+    modes.add_argument('--both', dest='launch_mode', action='store_const', const='both',
+                       help='Show the calendar and widget together')
     parser.set_defaults(launch_mode=os.environ.get('GOOTTI_LAUNCH_MODE', 'calendar'))
     parser.add_argument('--self-test', action='store_true',
                         help='Run an isolated offscreen packaging smoke test')
@@ -75,11 +77,11 @@ def main():
         return 1
 
     def show_mode(mode):
-        if mode == 'widget':
+        if mode in ('widget', 'both'):
             window.widget_only = True
             app.setQuitOnLastWindowClosed(False)
             window.set_widget_enabled(True, persist=False)
-        else:
+        if mode in ('calendar', 'both'):
             window.showNormal()
             window.raise_()
             window.activateWindow()

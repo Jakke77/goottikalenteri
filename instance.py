@@ -49,7 +49,7 @@ def start_server(name, owner, callback):
                 timer.stop()
                 try:
                     mode = json.loads(bytes(content).split(b'\n', 1)[0])['mode']
-                    if mode not in ('calendar', 'widget'):
+                    if mode not in ('calendar', 'widget', 'both'):
                         raise ValueError('Invalid launcher mode')
                 except (ValueError, KeyError, TypeError):
                     s.abort()

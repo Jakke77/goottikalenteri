@@ -21,7 +21,7 @@ class InstanceTests(unittest.TestCase):
             received = []
             server = start_server(name, owner, received.append)
             try:
-                for mode in ('widget', 'calendar'):
+                for mode in ('widget', 'calendar', 'both'):
                     child = QProcess()
                     code = ('from instance import request_mode; import sys; '
                             f'sys.exit(0 if request_mode({name!r}, {mode!r}) else 1)')
@@ -36,7 +36,7 @@ class InstanceTests(unittest.TestCase):
                         child.waitForFinished(1000)
                         self.fail('Launcher IPC timed out')
                     self.assertEqual(child.exitCode(), 0, bytes(child.readAllStandardError()).decode())
-                self.assertEqual(received, ['widget', 'calendar'])
+                self.assertEqual(received, ['widget', 'calendar', 'both'])
             finally:
                 server.close()
 

@@ -3,6 +3,7 @@ import importlib.util
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 HAS_QT = importlib.util.find_spec('PyQt6') is not None
@@ -17,6 +18,8 @@ class WidgetTests(unittest.TestCase):
         self.app = QApplication.instance() or QApplication([])
         self.app.setStyleSheet(STYLE)
         self.directory = tempfile.TemporaryDirectory()
+        self.env = patch.dict(os.environ, {'XDG_CONFIG_HOME': self.directory.name})
+        self.env.start()
         QSettings.setDefaultFormat(QSettings.Format.IniFormat)
         QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope,
                           self.directory.name)
@@ -33,6 +36,7 @@ class WidgetTests(unittest.TestCase):
         self.owner.close()
         self.owner.deleteLater()
         self.app.processEvents()
+        self.env.stop()
         self.directory.cleanup()
 
     def test_transparency_and_resize_cancel(self):

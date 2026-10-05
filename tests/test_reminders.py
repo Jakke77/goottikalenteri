@@ -93,6 +93,8 @@ class ReminderGuiTests(unittest.TestCase):
         from storage import EventStore
         self.app = QApplication.instance() or QApplication([])
         self.directory = tempfile.TemporaryDirectory()
+        self.env = patch.dict(os.environ, {'XDG_CONFIG_HOME': self.directory.name})
+        self.env.start()
         QSettings.setDefaultFormat(QSettings.Format.IniFormat)
         QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, self.directory.name)
         self.app.setOrganizationName('ReminderTest')
@@ -109,6 +111,7 @@ class ReminderGuiTests(unittest.TestCase):
         self.owner.close()
         self.owner.deleteLater()
         self.app.processEvents()
+        self.env.stop()
         self.directory.cleanup()
 
     def test_editor_and_calendar_markers_and_hide(self):
@@ -160,6 +163,15 @@ class ReminderGuiTests(unittest.TestCase):
         snooze.click()
         self.assertEqual(len(self.owner.reminders.store.pending()), 1)
         self.assertEqual(len(self.owner.reminders.popups), 0)
+
+    def test_widget_restored_position_stays_on_screen(self):
+        self.owner.set_widget_enabled(True)
+        widget = self.owner.desktop_widget
+        widget.move(100000, 100000)
+        widget.update_clock()
+        area = widget.screen().availableGeometry()
+        self.assertLessEqual(widget.x() + widget.width(), area.right() + 1)
+        self.assertLessEqual(widget.y() + widget.height(), area.bottom() + 1)
 
     def test_theme_zero_alpha_and_cancel(self):
         from widget import SettingsDialog, load_options
