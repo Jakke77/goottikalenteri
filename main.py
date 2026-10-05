@@ -28,6 +28,10 @@ def main():
     args = parser.parse_args()
     if args.self_test:
         os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+    elif sys.platform.startswith('linux') and os.environ.get('DISPLAY'):
+        # XWayland supplies desktop stacking and saved positions on GNOME.
+        # Preserve an explicitly selected backend, including headless tests.
+        os.environ.setdefault('QT_QPA_PLATFORM', 'xcb')
     app = QApplication([sys.argv[0]])
     # Keep storage/settings identity stable across the visible rebranding.
     app.setApplicationName('Goottikalenteri')

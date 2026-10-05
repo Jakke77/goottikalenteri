@@ -28,7 +28,8 @@ def load_options(settings):
 
 class DesktopWidget(QWidget):
     def __init__(self, owner, settings):
-        super().__init__(None, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
+        # A tool window can be kept above its application's calendar by GNOME.
+        super().__init__(None, Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint)
         self.owner, self.settings = owner, settings
         self.setWindowTitle('Varjoaika-widget')
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -70,7 +71,10 @@ class DesktopWidget(QWidget):
         self.weather.configure(self.options)
         visible = self.isVisible()
         position = self.pos()
-        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, self.options['on_top'])
+        flags = self.windowFlags() & ~(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.WindowStaysOnBottomHint)
+        flags |= (Qt.WindowType.WindowStaysOnTopHint if self.options['on_top']
+                  else Qt.WindowType.WindowStaysOnBottomHint)
+        self.setWindowFlags(flags)
         self.setCursor(Qt.CursorShape.ArrowCursor if self.options['locked']
                        else Qt.CursorShape.SizeAllCursor)
         self.update_clock()
